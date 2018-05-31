@@ -18,7 +18,7 @@ void draw(){
   fill(255, 0, 0);
   ellipse(x, y, 50, 50);
   fill(0, 102, 153);
-  text( lastString, 20,20 );
+  text(lastString, 20,20);
   x+=xv;
   y+=yv;
 }

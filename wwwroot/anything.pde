@@ -11,23 +11,38 @@ int x = 0;
 int y = 100;
 int xv = 1;
 int yv = 0;
+int xa = 0;
+int ya = 0;
 String lastString = "";
+
+boolean b = true;
 
 void draw(){  
   background(125);
-  fill(255, 0, 0);
+  if( keyCode == UP ) fill(255, 0, 0);
   ellipse(x, y, 50, 50);
   fill(0, 102, 153);
   text(lastString, 20,20);
+  xv += xa;
+  yv += ya;
   x+=xv;
   y+=yv;
 }
 
 void keyPressed(){
-  if(false){
-
+  if(keyCode == UP){
+    ya = -1;
+  }else if(keyCode == DOWN ){
+    ya = 1;
+  }else if(keyCode == LEFT ){
+    xa = -1;
+  }else if(keyCode == RIGHT ){
+    xa = 1;
   }else{
-    yv = 10;
     lastString = "keyPress " + keyCode;
   }
+}
+
+void keyReleased(){
+  ya=xa=0;
 }

@@ -28,6 +28,6 @@ void keyPressed(){
 
   }else{
     yv = 10;
-    lastString = "keyPress " + value;
+    lastString = "keyPress " + keyCode;
   }
 }

@@ -1,5 +1,7 @@
 //import java.util.LinkedList;
 
+
+
 class Loc{
     int x;
     int y;
@@ -7,14 +9,52 @@ class Loc{
         this.x = x;
         this.y = y;
     }
+
+    // Adds Loc to a velocity
     Loc plus( Loc other ){
         return new Loc( x + other.x, y + other.y );
+    }
+
+    double angleTo( Loc other ){
+        return Math.atan2(other.y-this.y,other.x-this.x);
+    }
+    double distanceTo( Loc other ){
+        return Math.sqrt( Math.pow( other.x-this.x,2) + Math.pow( other.y-this.y,2) );
+    }
+
+    Loc rotateAround( Loc other, double angle ){
+        double theta = other.angleTo(this) + angle;
+        double r = other.distanceTo(this);
+        return new Loc( r*Math.cos(theta)+other.x,r*Math.sin(theta)+other.y );
     }
 }
 
 // Method that returns new location with less typing
 Loc l( int x, int y ){
     return new Loc( x, y );
+}
+void line( Loc a, Loc b ){
+    line( a.x, a,y, b.x, b.y );
+}
+
+class Line{
+    Loc a = l(0,0);
+    Loc b = l(0,0);
+
+    Loc closestLocTo( Loc other ){
+        double myAngle = a.angleTo(b);
+        Loc rotated = other.rotateAround(a,-myAngle);
+        Loc bRotated = b.rotateAround(a,-myAngle );
+        Loc result = l(0,0);
+        if( rotated.x < min(a.x,bRotated.x)){
+            result = l(min(a.x,bRotated.x),a.y);
+        }else if( rotated.x > max(a.x,bRotated.x)){
+            result = l(max(a.x,bRotated.x),a.y);
+        }else{
+            result = l( rotated.x, a.y );
+        }
+        return result.rotateAround( a, myAngle );
+    }
 }
 
 abstract class Movable{
@@ -29,10 +69,8 @@ abstract class Movable{
     }
 }
 
-class Wall{
+class Wall extends Line{
 
-    Loc a;
-    Loc b;
     int weight = 5;
 
     public Wall( Loc a, Loc b ){
@@ -56,6 +94,11 @@ class Pixel extends Movable{
 
         fill(255);
         rect(location.x-size.x/2,location.y-size.y/2,size.x,size.y);
+
+        for( Wall wall : walls ){
+            Loc closestPoint = wall.closestLocTo( location );
+            line( location, closestPoint );
+        }
     }
 
     void keyPressed(){

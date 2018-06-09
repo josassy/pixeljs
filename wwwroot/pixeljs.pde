@@ -1,32 +1,41 @@
 //import java.util.LinkedList;
 
-class Location{
+class Loc{
     int x;
     int y;
-    public Location(int x, int y){
+    public Loc(int x, int y){
         this.x = x;
         this.y = y;
+    }
+    Loc plus( Loc other ){
+        return new Loc( x + other.x, y + other.y );
     }
 }
 
 // Method that returns new location with less typing
-Location l( int x, int y ){
-    return new Location( x, y );
+Loc l( int x, int y ){
+    return new Loc( x, y );
 }
 
 abstract class Movable{
-    Location location = l( 100, 100 );
+    Loc location = l( 100, 100 );
     abstract public void draw();
-    Location size = l( 10, 10 );
+    Loc size = l( 10, 10 );
+    int speed = 5;
+    Loc velocity = l(0,0);
+
+    void doMove(){
+        location = location.plus(velocity);
+    }
 }
 
 class Wall{
 
-    Location a;
-    Location b;
+    Loc a;
+    Loc b;
     int weight = 5;
 
-    public Wall( Location a, Location b ){
+    public Wall( Loc a, Loc b ){
         this.a = a;
         this.b = b;
     }
@@ -39,13 +48,40 @@ class Wall{
 }
 
 class Pixel extends Movable{
-    public Pixel( Location location ){
+    public Pixel( Loc location ){
         this.location = location;
     }
     void draw(){
+        doMove();
+
         fill(255);
         rect(location.x-size.x/2,location.y-size.y/2,size.x,size.y);
     }
+
+    void keyPressed(){
+        if(keyCode == UP){
+            velocity.y = -speed;
+        }else if(keyCode == DOWN ){
+            velocity.y = speed;
+        }else if(keyCode == LEFT ){
+            velocity.x = -speed;
+        }else if(keyCode == RIGHT ){
+            velocity.x = speed;
+        }else{
+            lastString = "keyPress " + keyCode;
+        }
+    }
+
+    void keyReleased(){
+        if(keyCode == UP || keyCode == DOWN){
+            velocity.y = 0;
+        }else if(keyCode == LEFT || keyCode == RIGHT ){
+            velocity.x = 0;
+        }else{
+            lastString = "keyReleased " + keyCode;
+        }
+    }
+
 }
 
 String lastString = "";
@@ -53,6 +89,11 @@ String lastString = "";
 Pixel pixel = new Pixel( l(100, 100));
 
 ArrayList<Wall> walls = new ArrayList<Wall>();
+
+// Create new Wall object and it to the walls list
+void aw( int x1, int y1, int x2, int y2 ){
+    walls.add( new Wall(l(x1,y1),l(x2,y2)) );
+}
 
 void setup(){
 	size(600,500);
@@ -63,7 +104,7 @@ void setup(){
 	textFont("mono.ttf", 32);
 
     // Create the walls
-    walls.add(new Wall(l(100,50),l(100,250)));
+    aw(150,50,200,250);
 
 }
 
@@ -78,19 +119,9 @@ void draw(){
 }
 
 void keyPressed(){
-	if(keyCode == UP){
-		ya = -1;
-	}else if(keyCode == DOWN ){
-		ya = 1;
-	}else if(keyCode == LEFT ){
-		xa = -1;
-	}else if(keyCode == RIGHT ){
-		xa = 1;
-	}else{
-		lastString = "keyPress " + keyCode;
-	}
+    pixel.keyPressed();
 }
 
 void keyReleased(){
-	ya=xa=0;
+	pixel.keyReleased();
 }

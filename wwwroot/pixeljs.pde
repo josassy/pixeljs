@@ -1,3 +1,59 @@
+//import java.util.LinkedList;
+
+class Location{
+    int x;
+    int y;
+    public Location(int x, int y){
+        this.x = x;
+        this.y = y;
+    }
+}
+
+// Method that returns new location with less typing
+Location l( int x, int y ){
+    return new Location( x, y );
+}
+
+abstract class Movable{
+    Location location = l( 100, 100 );
+    abstract public void draw();
+    Location size = l( 10, 10 );
+}
+
+class Wall{
+
+    Location a;
+    Location b;
+    int weight = 5;
+
+    public Wall( Location a, Location b ){
+        this.a = a;
+        this.b = b;
+    }
+
+    void draw(){
+        stroke(255);
+        strokeWeight(weight);
+        line(a.x,a.y,b.x,b.y);
+    }
+}
+
+class Pixel extends Movable{
+    public Pixel( Location location ){
+        this.location = location;
+    }
+    void draw(){
+        fill(255);
+        rect(location.x-size.x/2,location.y-size.y/2,size.x,size.y);
+    }
+}
+
+String lastString = "";
+
+Pixel pixel = new Pixel( l(100, 100));
+
+ArrayList<Wall> walls = new ArrayList<Wall>();
+
 void setup(){
 	size(600,500);
 	background(125);
@@ -5,41 +61,20 @@ void setup(){
 	frameRate(24);
 	textSize(32);
 	textFont("mono.ttf", 32);
+
+    // Create the walls
+    walls.add(new Wall(l(100,50),l(100,250)));
+
 }
-
-public abstract class Movable{
-    abstract public void draw();
-    
-}
-
-public class Pixel extends Movable{
-    public void draw(){
-        rect(100,200,25,40);
-    }
-}
-
-int x = 0;
-int y = 100;
-int xv = 1;
-int yv = 0;
-int xa = 0;
-int ya = 0;
-String lastString = "";
-Pixel pixel = new Pixel();
-
-boolean b = true;
 
 void draw(){  
-	background(125);
-	if( keyCode == UP ) fill(255, 0, 0);
-	ellipse(x, y, 50, 50);
+	background(0);
     pixel.draw();
+    for(Wall wall : walls){
+        wall.draw();
+    }
 	fill(0, 102, 153);
 	text(lastString, 20,20);
-	xv += xa;
-	yv += ya;
-	x+=xv;
-	y+=yv;
 }
 
 void keyPressed(){

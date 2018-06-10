@@ -25,7 +25,7 @@ class Loc{
     Loc rotateAround( Loc other, double angle ){
         double theta = other.angleTo(this) + angle;
         double r = other.distanceTo(this);
-        return new Loc( r*Math.cos(theta)+other.x,r*Math.sin(theta)+other.y );
+        return new Loc( (int)(r*Math.cos(theta)+other.x),(int)(r*Math.sin(theta)+other.y) );
     }
 }
 
@@ -33,8 +33,10 @@ class Loc{
 Loc l( int x, int y ){
     return new Loc( x, y );
 }
-void line( Loc a, Loc b ){
-    line( a.x, a,y, b.x, b.y );
+
+//Can't be just line because javascript can't tell it appart.
+void lineLoc( Loc a, Loc b ){
+    line( a.x, a.y, b.x, b.y );
 }
 
 class Line{
@@ -97,7 +99,7 @@ class Pixel extends Movable{
 
         for( Wall wall : walls ){
             Loc closestPoint = wall.closestLocTo( location );
-            line( location, closestPoint );
+            lineLoc( location, closestPoint );
         }
     }
 
@@ -144,7 +146,7 @@ void setup(){
 	fill(255);
 	frameRate(24);
 	textSize(32);
-	textFont("mono.ttf", 32);
+	//textFont("mono.ttf", 32);
 
     // Create the walls
     aw(150,50,200,250);

@@ -1,6 +1,4 @@
 
-
-
 class Loc{
     int x;
     int y;
@@ -82,7 +80,7 @@ class Wall extends Line{
     void draw(){
         stroke(255);
         strokeWeight(weight);
-        line(a.x,a.y,b.x,b.y);
+        lineLoc(a,b);
     }
 }
 
@@ -96,6 +94,9 @@ class Pixel extends Movable{
         fill(255);
         rect(location.x-size.x/2,location.y-size.y/2,size.x,size.y);
 
+        // Draw line to closest walls
+        //stroke = (255,0,0); // Change line color to Red
+        //strokeWeight = 1; // Change line weight to 1 px
         for( Wall wall : walls ){
             Loc closestPoint = wall.closestLocTo( location );
             lineLoc( location, closestPoint );
@@ -149,7 +150,7 @@ void setup(){
 
     // Create the walls
     aw(150,50,200,250);
-
+    aw(300,60,270,300);
 }
 
 void draw(){  

@@ -31,7 +31,7 @@ Loc l( int x, int y ){
     return new Loc( x, y );
 }
 
-//Can't be just line because javascript can't tell it appart.
+// Can't be just line because javascript can't tell it apart.
 void lineLoc( Loc a, Loc b ){
     line( a.x, a.y, b.x, b.y );
 }
@@ -56,18 +56,6 @@ class Line{
     }
 }
 
-abstract class Movable{
-    Loc location = l( 100, 100 );
-    abstract public void draw();
-    Loc size = l( 10, 10 );
-    int speed = 5;
-    Loc velocity = l(0,0);
-
-    void doMove(){
-        location = location.plus(velocity);
-    }
-}
-
 class Wall extends Line{
 
     int weight = 5;
@@ -84,22 +72,37 @@ class Wall extends Line{
     }
 }
 
+abstract class Movable{
+    Loc location = l( 100, 100 );
+    abstract public void draw();
+    Loc size = l( 10, 10 );
+    int speed = 5;
+    Loc velocity = l(0,0);
+
+    void doMove(){
+        location = location.plus(velocity);
+    }
+}
+
 class Pixel extends Movable{
     public Pixel( Loc location ){
         this.location = location;
     }
     void draw(){
+        // Call inherited Movable method
         doMove();
 
-        fill(255);
-        rect(location.x-size.x/2,location.y-size.y/2,size.x,size.y);
-
-        // Draw line to closest walls
-        //stroke = (255,0,0); // Change line color to Red
-        //strokeWeight = 1; // Change line weight to 1 px
+        // Draw line to closest wall
         for( Wall wall : walls ){
+            stroke(255,0,0); // Change line color to Red
+            strokeWeight(1); // Change line weight to 1 px
             Loc closestPoint = wall.closestLocTo( location );
             lineLoc( location, closestPoint );
+
+        // Draw Pixel
+        stroke(255);
+        fill(255);
+        rect(location.x-size.x/2,location.y-size.y/2,size.x,size.y);
         }
     }
 

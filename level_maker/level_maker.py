@@ -47,7 +47,72 @@ class Loc:
         theta = other.angle_to(self) + angle
         r = other.distance_to(self)
         return Loc( int(r*math.cos(theta)+other.x),int(r*math.sin(theta)+other.y) )
+def distance_flood_2( in_image, tracking_color ):
+    width = in_image.shape[1]
+    height = in_image.shape[0]
+    loop_count = 0
 
+    #find tracking color
+    x_v = np.tile( np.arange(width), height )
+    y_v = np.repeat( np.arange(height), width )
+    is_color = np.logical_and((in_image[y_v,x_v,0] == tracking_color[0]),
+                (in_image[y_v,x_v,1] == tracking_color[1]),
+                (in_image[y_v,x_v,2] == tracking_color[2]))
+
+    interest_list_x_v = x_v[is_color]
+    interest_list_y_v = y_v[is_color]
+
+    flood_map = np.full((height,width), float( "inf" ))
+    flood_map[interest_list_y_v,interest_list_x_v] = 0
+
+    loop_count = 0
+    while( len(interest_list_x_v) > 0 ):
+
+        def propogate_improvement(from_x_v,from_y_v,to_x_v,to_y_v,too_far_v):
+            not_too_far_v = ~too_far_v
+            from_x_v = from_x_v[not_too_far_v]
+            from_y_v = from_y_v[not_too_far_v]
+            to_x_v   = to_x_v[not_too_far_v]
+            to_y_v   = to_y_v[not_too_far_v]
+
+            suggested_value_v = flood_map[from_y_v,from_x_v] + 1
+            is_color_v = np.logical_and( (in_image[to_y_v,to_x_v,0] == tracking_color[0]),
+                (in_image[to_y_v,to_x_v,1] == tracking_color[1]),
+                (in_image[to_y_v,to_x_v,2] == tracking_color[2]))
+            suggested_value_v[is_color_v] = 0
+            is_improvement_v = suggested_value_v < flood_map[to_y_v,to_x_v]
+            good_to_y_v = to_y_v[is_improvement_v]
+            good_to_x_v = to_x_v[is_improvement_v]
+            good_suggested_value_v = suggested_value_v[is_improvement_v]
+
+            flood_map[good_to_y_v,good_to_x_v] = good_suggested_value_v
+            return good_to_x_v,good_to_y_v
+
+
+        interest_list_y_up_v = interest_list_y_v-1
+        good_up_x_v   , good_up_y_v    = propogate_improvement( interest_list_x_v, interest_list_y_v, interest_list_x_v      , interest_list_y_up_v  , interest_list_y_up_v    < 0       )
+        interest_list_x_left_v = interest_list_x_v-1
+        good_left_x_v , good_left_y_v  = propogate_improvement( interest_list_x_v, interest_list_y_v, interest_list_x_left_v , interest_list_y_v     , interest_list_x_left_v  < 0       )
+        interest_list_y_down_v = interest_list_y_v+1
+        good_down_x_v , good_down_y_v  = propogate_improvement( interest_list_x_v, interest_list_y_v, interest_list_x_v      , interest_list_y_down_v, interest_list_y_down_v  >= height )
+        interest_list_x_right_v = interest_list_x_v+1
+        good_right_x_v, good_right_y_v = propogate_improvement( interest_list_x_v, interest_list_y_v, interest_list_x_right_v, interest_list_y_v     , interest_list_x_right_v >= width  )
+
+        good_x_v = np.concatenate((good_up_x_v,good_left_x_v,good_down_x_v,good_right_x_v))
+        good_y_v = np.concatenate((good_up_y_v,good_left_y_v,good_down_y_v,good_right_y_v))
+        if len(good_x_v) > 0:
+            good_yx = np.dstack((good_y_v,good_x_v))
+            good_yx = np.reshape(good_yx, (-1,2) ) #remove extra dimenson
+            good_yx = np.unique( good_yx, axis=0 )
+            interest_list_x_v = good_yx[:,1]
+            interest_list_y_v = good_yx[:,0]
+        else:
+            interest_list_x_v = good_x_v
+            interest_list_y_v = good_y_v
+
+        loop_count += 1
+        print( "interest list len: " + str(len(interest_list_x_v)) + " loop_count " + str( loop_count ) )
+    return flood_map
 
 def distance_flood( in_image, tracking_color ):
 
@@ -176,16 +241,25 @@ class Line:
 
 
     
-    
+def mainy( args ):
+    image = np.asarray( [[[0,0,0],[0,0,0],[0,0,0]],
+                         [[0,0,0],[1,0,0],[1,0,0]],
+                         [[0,0,0],[1,0,0],[1,0,0]],
+                         [[0,0,0],[0,0,0],[0,0,0]]] )
+
+    flood = distance_flood_2( image, (0,0,0) )
+    print( str(flood) )
 
 
 def main( args ):
     print( "Processing level " + str( args ) )
     
-    #image = misc.imread( args[0], flatten= 0)
-    #flood = distance_flood( image, (0,0,0) )
+    image = misc.imread( args[0], flatten= 0)
+    flood = distance_flood_2( image, (0,0,0) )
     #print( "Loaded image " + str( image ) + " which has shape " + str( image.shape ) )
-    flood =  misc.imread( args[0], flatten= 1)
+    #flood =  misc.imread( args[0], flatten= 1)
+    
+    misc.imsave( "flood.bmp", flood )
 
 
     line_image = np.zeros( flood.shape )

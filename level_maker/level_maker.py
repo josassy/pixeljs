@@ -209,7 +209,7 @@ def main( args ):
             distance = 10
             best_score = 0
             best_direction = 0
-            for test_direction in (-x*math.pi/100 for x in range(100)):
+            for test_direction in (x*math.pi/100 for x in range(100)):
                 print( "testing direction " + str( test_direction ) )
                 walk_value = get_walk_value( flood, top_of_hill, test_direction, distance )
                 if walk_value > best_score:
@@ -229,7 +229,7 @@ def main( args ):
                 top_of_hill.y, new_improvement  = optimize( top_of_hill.y,  lambda test_y:         get_walk_value( flood, Loc(top_of_hill.x,test_y), best_direction, distance ) )
 
             #line = Line(top_of_hill,top_of_hill.add_polar(distance,best_direction), flood[int(top_of_hill.y),int(top_of_hill.x)] )
-            line = Line(top_of_hill,top_of_hill.add_polar(distance,best_direction), 10 )
+            line = Line(top_of_hill,top_of_hill.add_polar(distance,best_direction), 20 )
             print( "adding line " + str(line) )
             lines.append( line )
 

@@ -13,6 +13,9 @@ class Loc:
     x = 0
     y = 0
 
+    def clone( self ):
+        return Loc( self.x, self.y )
+
     def up( self, amount ):
         return Loc( self.x, self.y-amount)
     def down( self, amount ):
@@ -170,25 +173,40 @@ def climb_hill( area, loc ):
                 continue
     return loc
 
-def get_walk_value( area, start, direction, distance ):
+def get_walk_value( area, line ):
     sumz = 0
     step = 0
     count = 0
+    bad_steps = 0
+    good_steps = 0
+    distance = line.length()
+    width = area.shape[1]
+    height = area.shape[0]
     while step < distance:
-        test = start.add_polar(step,direction)
+        test = Loc( step/distance*(line.b.x-line.a.x)+line.a.x, step/distance*(line.b.y-line.a.y)+line.a.y )
+        if test.x < 0 or test.y < 0 or test.x > width-1 or test.y > height-1: return -float("inf")
         value = area[int(test.y),int(test.x)]
-        if value == 0: return 0
+        if value == 0:
+            bad_steps += 1
+        else:
+            good_steps += 1
+
         sumz += value
         count += 1
-        step += 2
-    return sumz/count + .01*distance
+        step += 1
+    
+    if bad_steps == 0:
+        return sumz/count + .5*distance
+    else:
+        return sumz/count - .01*distance
 
-def optimize( best_in, test_function ):
-    did_improvement = False
+def optimize( best_in, already_improved, test_function ):
+    did_improvement = already_improved
     best_out = test_function(best_in)
-    speed = .01
+    speed = 5
     count_out = 100
-    while count_out > 0:
+    max_improve = 5
+    while count_out > 0 and max_improve > 0 and abs(speed) > .1:
         test_in = best_in + speed
         test_out = test_function(test_in)
         if test_out > best_out:
@@ -197,6 +215,7 @@ def optimize( best_in, test_function ):
             speed *= 2
             count_out = 100
             did_improvement = True
+            max_improve += 1
         else:
             speed *= -.5
             count_out -= 1
@@ -211,9 +230,15 @@ class Line:
         self.b = b
         self.weight = weight
 
-    def contains( self, loc ):
+    def clone( self ):
+        return Line( self.a.clone(), self.b.clone(), self.weight )
+
+    def get_line_command( self ):
+        return "    aw(" + str(int(self.a.x)) + "," + str(int(self.a.y)) + "," + str(int(self.b.x)) + "," + str(int(self.b.y)) + "," + str(int(self.weight)) + ");"
+
+    def contains( self, loc, extra_weight=1 ):
         closest_point = self.closest_loc_to( loc )
-        return closest_point.distance_to( loc ) <= self.weight*.5
+        return closest_point.distance_to( loc ) <= self.weight*.5*extra_weight
 
     def closest_loc_to( self, other ):
         myAngle = self.a.angle_to(self.b)
@@ -235,6 +260,33 @@ class Line:
         cc = np.maximum(0,np.minimum(image.shape[1]-1,cc))
         image[rr, cc] = val * 100
 
+    def get_average_weight( self, image ):
+        sumz = 0
+        count = 0
+        distance = self.length()
+        width = image.shape[1]
+        height = image.shape[0]
+        while count < distance:
+            test = Loc( count/distance*(self.b.x-self.a.x)+self.a.x, count/distance*(self.b.y-self.a.y)+self.a.y )
+            if test.x < 0 or test.y < 0 or test.x > width-1 or test.y > height-1: 
+                pass
+            else:
+                sumz += image[int(test.y),int(test.x)]
+                count += 1
+        return sumz/count
+
+    def length( self ):
+        return self.a.distance_to( self.b )
+    
+    def move_a_x( self, nv ):
+        return Line( Loc( nv, self.a.y ), self.b, self.weight )
+    def move_a_y( self, nv ):
+        return Line( Loc( self.a.x, nv ), self.b, self.weight )
+    def move_b_x( self, nv ):
+        return Line( self.a, Loc( nv, self.b.y ), self.weight )
+    def move_b_y( self, nv ):
+        return Line( self.a, Loc( self.b.x, nv ), self.weight )
+        
 
     def __str__(self):
         return str(self.a) + " to " + str(self.b) + " w" + str(self.weight)
@@ -273,7 +325,7 @@ def main( args ):
         touches_line = False
         for line in lines:
             #print( "testing how far " + str( top_of_hill) + " is from " + str(line) )
-            if line.contains(top_of_hill):
+            if line.contains(top_of_hill,10):
                 touches_line = True
                 #print( "touches!!")
                 break
@@ -283,38 +335,47 @@ def main( args ):
             distance = 10
             best_score = 0
             best_direction = 0
-            for test_direction in (x*math.pi/100 for x in range(100)):
-                print( "testing direction " + str( test_direction ) )
-                walk_value = get_walk_value( flood, top_of_hill, test_direction, distance )
+            if len( lines ) == 4:
+                print( "hi" )
+            for test_direction in (x*math.pi/100 for x in range(101)):
+                walk_value = get_walk_value( flood,  Line( top_of_hill, top_of_hill.add_polar(distance,test_direction ),20 ) )
+                #print( "testing direction " + str( test_direction ) + " gets " + str(walk_value) )
                 if walk_value > best_score:
                     best_score = walk_value
                     best_direction = test_direction
+
+            best_line = Line( top_of_hill, top_of_hill.add_polar(distance,best_direction), 20 )
 
             #see if we can optimize
             made_improvement = True
             while made_improvement:
                 made_improvement = False
-                distance, new_improvement       = optimize( distance      , lambda test_distance:  get_walk_value( flood, top_of_hill,               best_direction, test_distance ) )
-                made_improvement = made_improvement or new_improvement
-                best_direction, new_improvement = optimize( best_direction, lambda test_direction: get_walk_value( flood, top_of_hill,               test_direction, distance ) )
-                made_improvement = made_improvement or new_improvement
-                top_of_hill.x, new_improvement  = optimize( top_of_hill.x,  lambda test_x:         get_walk_value( flood, Loc(test_x,top_of_hill.y), best_direction, distance ) )
-                made_improvement = made_improvement or new_improvement
-                top_of_hill.y, new_improvement  = optimize( top_of_hill.y,  lambda test_y:         get_walk_value( flood, Loc(top_of_hill.x,test_y), best_direction, distance ) )
+                before_line = best_line.clone()
+                best_line.b.x, made_improvement = optimize( best_line.b.x, made_improvement, lambda test: get_walk_value( flood, best_line.move_b_x(test) ) )
+                best_line.b.y, made_improvement = optimize( best_line.b.y, made_improvement, lambda test: get_walk_value( flood, best_line.move_b_y(test) ) )
+                best_line.a.x, made_improvement = optimize( best_line.a.x, made_improvement, lambda test: get_walk_value( flood, best_line.move_a_x(test) ) )
+                if len( lines ) == 4:
+                    print( "hi2" ) 
+                best_line.a.y, made_improvement = optimize( best_line.a.y, made_improvement, lambda test: get_walk_value( flood, best_line.move_a_y(test) ) )
+                if made_improvement:
+                    print( "improved " + str( before_line ) + " -> " + str( best_line ) )
 
             #line = Line(top_of_hill,top_of_hill.add_polar(distance,best_direction), flood[int(top_of_hill.y),int(top_of_hill.x)] )
-            line = Line(top_of_hill,top_of_hill.add_polar(distance,best_direction), 20 )
-            print( "adding line " + str(line) )
-            lines.append( line )
+            print( "adding line" + str(len(lines)+1) + " " + str(best_line) )
+            best_line.weight = best_line.get_average_weight( flood )
+            lines.append( best_line )
 
-            if len( lines ) > 10:
+            best_line.draw_on_image( line_image )
+            misc.imsave( "line_image_" + str(len(lines)) + ".bmp", line_image  )
+
+
+            if len( lines ) > 100:
                 break
 
+    misc.imsave( "line_image.bmp", line_image )
 
     for line in lines:
-        line.draw_on_image( line_image )
-
-    misc.imsave( "line_image.bmp", line_image )
+        print( line.get_line_command() )
 
 if(__name__ == '__main__'):
     if len( sys.argv ) < 2:

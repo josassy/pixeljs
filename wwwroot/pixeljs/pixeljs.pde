@@ -60,9 +60,10 @@ class Wall extends Line{
 
     int weight = 5;
 
-    public Wall( Loc a, Loc b ){
+    public Wall( Loc a, Loc b, int weight ){
         this.a = a;
         this.b = b;
+        this.weight = weight;
     }
 
     void draw(){
@@ -139,12 +140,12 @@ Pixel pixel = new Pixel( l(100, 100));
 ArrayList<Wall> walls = new ArrayList<Wall>();
 
 // Create new Wall object and it to the walls list
-void aw( int x1, int y1, int x2, int y2 ){
-    walls.add( new Wall(l(x1,y1),l(x2,y2)) );
+void aw( int x1, int y1, int x2, int y2, int weight ){
+    walls.add( new Wall(l(x1,y1),l(x2,y2), weight) );
 }
 
 void setup(){
-	size(600,500);
+	size(865,559);
 	background(125);
 	fill(255);
 	frameRate(24);
@@ -152,8 +153,26 @@ void setup(){
 	//textFont("mono.ttf", 32);
 
     // Create the walls
-    aw(150,50,200,250);
-    aw(300,60,270,300);
+    aw(226,87,224,342,4);
+    aw(245,85,544,86,3);
+    aw(363,137,522,137,1);
+    aw(601,181,699,202,1);
+    aw(420,219,580,349,1);
+    aw(318,272,318,418,1);
+    aw(181,285,374,285,1);
+    aw(677,295,677,318,1);
+    aw(676,322,676,362,1);
+    aw(675,366,675,385,1);
+    aw(65,377,384,377,1);
+    aw(543,403,666,406,3);
+    aw(594,400,480,423,2);
+    aw(613,400,718,427,2);
+    aw(476,429,461,460,2);
+    aw(725,437,728,464,3);
+    aw(462,455,510,491,2);
+    aw(728,463,655,497,2);
+    aw(494,485,624,502,2);
+    aw(558,500,685,490,2);
 }
 
 void draw(){  

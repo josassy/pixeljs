@@ -1,7 +1,7 @@
 import sys, collections, math
 import numpy as np
 
-from scipy import misc
+from scipy import misc, interpolate
 from skimage.draw import line_aa
 
 class Loc:
@@ -174,6 +174,46 @@ def climb_hill( area, loc ):
     return loc
 
 def get_walk_value( area, line ):
+    width = area.shape[1]
+    height = area.shape[0]
+
+
+    distance = line.length()
+    step_v = np.arange( 0, distance, .1 )
+
+    test_x_v = step_v/distance*(line.b.x-line.a.x)+line.a.x
+    test_y_v = step_v/distance*(line.b.y-line.a.y)+line.a.y
+
+    test_x_v = np.maximum( 0, np.minimum( width-1.001,  test_x_v ) )
+    test_y_v = np.maximum( 0, np.minimum( height-1.001, test_y_v ) )
+
+    left_v = np.floor( test_x_v ).astype(int)
+    right_v = left_v + 1
+    top_v  = np.floor( test_y_v ).astype(int)
+    bottom_v = top_v + 1
+
+    top_right_value_v    = area[ top_v   , right_v ]
+    top_left_value_v     = area[ top_v   , left_v  ]
+    bottom_right_value_v = area[ bottom_v, right_v ]
+    bottom_left_value_v  = area[ bottom_v, left_v  ]
+
+    top_value_v    = ( test_x_v-left_v )*( top_right_value_v   -top_left_value_v    )+top_left_value_v
+    bottom_value_v = ( test_x_v-left_v )*( bottom_right_value_v-bottom_left_value_v )+bottom_left_value_v
+
+    value_v        = ( test_y_v-top_v  )*( bottom_value_v      -top_value_v         )+top_value_v
+
+    sumz = np.sum(value_v)
+
+    bad_steps = (value_v == 0).any()
+
+    if not bad_steps:
+        #return sumz/len(step_v) + .6*distance
+        return sumz/len(step_v) * .1*distance
+    else:
+        return sumz/len(step_v) - .01*distance
+
+
+def get_walk_value_old( area, line ):
     sumz = 0
     step = 0
     count = 0
@@ -205,8 +245,8 @@ def optimize( best_in, already_improved, test_function ):
     best_out = test_function(best_in)
     speed = 5
     count_out = 100
-    max_improve = 5
-    while count_out > 0 and max_improve > 0 and abs(speed) > .1:
+    max_improve = 100
+    while count_out > 0 and max_improve > 0 and abs(speed) > .001:
         test_in = best_in + speed
         test_out = test_function(test_in)
         if test_out > best_out:
@@ -286,6 +326,13 @@ class Line:
         return Line( self.a, Loc( nv, self.b.y ), self.weight )
     def move_b_y( self, nv ):
         return Line( self.a, Loc( self.b.x, nv ), self.weight )
+    def move_b_length( self, nv ):
+        return Line( self.a, Loc( nv/self.length()*(self.b.x-self.a.x)+self.a.x,
+                                  nv/self.length()*(self.b.y-self.a.y)+self.a.y ), self.weight )
+    def move_a_length( self, nv ):
+        return Line( Loc( nv/self.length()*(self.a.x-self.b.x)+self.b.x,
+                          nv/self.length()*(self.a.y-self.b.y)+self.b.y ), self.b, self.weight )
+    
         
 
     def __str__(self):
@@ -325,7 +372,7 @@ def main( args ):
         touches_line = False
         for line in lines:
             #print( "testing how far " + str( top_of_hill) + " is from " + str(line) )
-            if line.contains(top_of_hill,10):
+            if line.contains(top_of_hill,5):
                 touches_line = True
                 #print( "touches!!")
                 break
@@ -351,18 +398,20 @@ def main( args ):
             while made_improvement:
                 made_improvement = False
                 before_line = best_line.clone()
-                best_line.b.x, made_improvement = optimize( best_line.b.x, made_improvement, lambda test: get_walk_value( flood, best_line.move_b_x(test) ) )
-                best_line.b.y, made_improvement = optimize( best_line.b.y, made_improvement, lambda test: get_walk_value( flood, best_line.move_b_y(test) ) )
-                best_line.a.x, made_improvement = optimize( best_line.a.x, made_improvement, lambda test: get_walk_value( flood, best_line.move_a_x(test) ) )
-                if len( lines ) == 4:
-                    print( "hi2" ) 
-                best_line.a.y, made_improvement = optimize( best_line.a.y, made_improvement, lambda test: get_walk_value( flood, best_line.move_a_y(test) ) )
+                best_line.b.x, made_improvement = optimize( best_line.b.x     , made_improvement, lambda test: get_walk_value( flood, best_line.move_b_x(test) ) )
+                best_line.b.y, made_improvement = optimize( best_line.b.y     , made_improvement, lambda test: get_walk_value( flood, best_line.move_b_y(test) ) )
+                best_line.a.x, made_improvement = optimize( best_line.a.x     , made_improvement, lambda test: get_walk_value( flood, best_line.move_a_x(test) ) )
+                best_line.a.y, made_improvement = optimize( best_line.a.y     , made_improvement, lambda test: get_walk_value( flood, best_line.move_a_y(test) ) )
+                new_length   , made_improvement = optimize( best_line.length(), made_improvement, lambda test: get_walk_value( flood, best_line.move_a_length( test ) ) )
+                best_line.a = best_line.move_a_length(new_length).a
+                new_length   , made_improvement = optimize( best_line.length(), made_improvement, lambda test: get_walk_value( flood, best_line.move_b_length( test ) ) )
+                best_line.b = best_line.move_b_length(new_length).b
                 if made_improvement:
                     print( "improved " + str( before_line ) + " -> " + str( best_line ) )
 
             #line = Line(top_of_hill,top_of_hill.add_polar(distance,best_direction), flood[int(top_of_hill.y),int(top_of_hill.x)] )
             print( "adding line" + str(len(lines)+1) + " " + str(best_line) )
-            best_line.weight = best_line.get_average_weight( flood )
+            best_line.weight = best_line.get_average_weight( flood )*2
             lines.append( best_line )
 
             best_line.draw_on_image( line_image )
@@ -375,11 +424,17 @@ def main( args ):
     misc.imsave( "line_image.bmp", line_image )
 
     for line in lines:
+        #pull in the ends by half the weight
+        length = line.length()
+        line.b = line.move_b_length( length- line.weight*.5 ).b
+        line.a = line.move_a_length( length- line.weight ).a
+
+    for line in lines:
         print( line.get_line_command() )
 
 if(__name__ == '__main__'):
     if len( sys.argv ) < 2:
-        sys.argv.append( "level_maker/test1.bmp" )
+        sys.argv.append( "level_maker/test2.bmp" )
     
 
     main(sys.argv[1:])

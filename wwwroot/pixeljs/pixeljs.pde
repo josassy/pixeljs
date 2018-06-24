@@ -1,8 +1,8 @@
 
 class Loc{
-    int x;
-    int y;
-    public Loc(int x, int y){
+    double x;
+    double y;
+    public Loc(double x, double y){
         this.x = x;
         this.y = y;
     }
@@ -10,6 +10,14 @@ class Loc{
     // Adds Loc to a velocity
     Loc plus( Loc other ){
         return new Loc( x + other.x, y + other.y );
+    }
+
+    Loc minus( Loc other ){
+        return new Loc( x - other.x, y - other.y );
+    }
+
+    Loc times( double other ){
+        return new Loc( x*other,y*other);
     }
 
     double angleTo( Loc other ){
@@ -24,35 +32,76 @@ class Loc{
         double r = other.distanceTo(this);
         return new Loc( (int)(r*Math.cos(theta)+other.x),(int)(r*Math.sin(theta)+other.y) );
     }
+
+    double dotProduct( Loc other ){
+        return this.x*other.x+this.y*other.y;
+    }
+
+    Loc unitLength(){
+        double r = Math.sqrt( Math.pow( this.x, 2 )+Math.pow( this.y, 2 ) );
+        return new Loc( this.x/r, this.y/r );
+    }
 }
 
 // Method that returns new location with less typing
-Loc l( int x, int y ){
+Loc l( double x, double y ){
     return new Loc( x, y );
 }
 
 // Can't be just line because javascript can't tell it apart.
 void lineLoc( Loc a, Loc b ){
-    line( a.x, a.y, b.x, b.y );
+    line( (float)a.x, (float)a.y, (float)b.x, (float)b.y );
 }
 
 class Line{
     Loc a = l(0,0);
     Loc b = l(0,0);
+    
+    public Line( Loc newA, Loc newB ){
+      a = newA; b = newB;
+    }
+
+    Loc aToB(){
+        return b.minus(a);
+    }
 
     Loc closestLocTo( Loc other ){
         double myAngle = a.angleTo(b);
         Loc rotated = other.rotateAround(a,-myAngle);
         Loc bRotated = b.rotateAround(a,-myAngle );
         Loc result = l(0,0);
-        if( rotated.x < min(a.x,bRotated.x)){
-            result = l(min(a.x,bRotated.x),a.y);
-        }else if( rotated.x > max(a.x,bRotated.x)){
-            result = l(max(a.x,bRotated.x),a.y);
+        if( rotated.x < Math.min(a.x,bRotated.x)){
+            result = l(Math.min(a.x,bRotated.x),a.y);
+        }else if( rotated.x > Math.max(a.x,bRotated.x)){
+            result = l(Math.max(a.x,bRotated.x),a.y);
         }else{
             result = l( rotated.x, a.y );
         }
         return result.rotateAround( a, myAngle );
+    }
+
+    Loc intersectionWith( Line other ){
+        // Line AB represented as a1x + b1y = c1
+        double a1 = this.b.y - this.a.y;
+        double b1 = this.a.x - this.b.x;
+        double c1 = a1*(this.a.x) + b1*(this.a.y);
+      
+        // Line CD represented as a2x + b2y = c2
+        double a2 = other.b.y - other.a.y;
+        double b2 = other.a.x - other.b.x;
+        double c2 = a2*(other.a.x)+ b2*(other.a.y);
+      
+        double determinant = a1*b2 - a2*b1;
+      
+        if (determinant == 0){
+            // The lines are parallel. This is simplified
+            // by returning a pair of FLT_MAX
+            return new Loc(Double.MAX_VALUE, Double.MAX_VALUE);
+        }else{
+            double x = (b2*c1 - b1*c2)/determinant;
+            double y = (a1*c2 - a2*c1)/determinant;
+            return new Loc(x, y);
+        }
     }
 }
 
@@ -61,9 +110,8 @@ class Wall extends Line{
     int weight = 5;
 
     public Wall( Loc a, Loc b, int weight ){
-        this.a = a;
-        this.b = b;
-        this.weight = weight;
+      super( a,b );
+      this.weight = weight;
     }
 
     void draw(){
@@ -81,6 +129,36 @@ abstract class Movable{
     Loc velocity = l(0,0);
 
     void doMove(){
+
+        Loc new_location = location.plus(velocity);
+
+        Line step_segment = new Line(location,new_location);
+
+        double closest_dist = Double.POSITIVE_INFINITY;
+        Line selected_line = null;
+        Loc hitPoint = null;
+
+        for( Wall wall : walls ){
+            hitPoint = step_segment.intersectionWith( wall );
+            if( hitPoint != null ){
+                if( location.distanceTo(hitPoint) < closest_dist ){
+                    closest_dist = location.distanceTo(hitPoint);
+                    selected_line = wall;
+                }
+            }
+        }
+
+        if( hitPoint != null ){
+            new_location = hitPoint;
+
+
+            Loc wallUnitLength = selected_line.aToB().unitLength();
+
+            double speedAlongWall = velocity.dotProduct( wallUnitLength );
+            velocity = wallUnitLength.times( speedAlongWall );
+        }
+
+
         location = location.plus(velocity);
     }
 }
@@ -100,10 +178,10 @@ class Pixel extends Movable{
             Loc closestPoint = wall.closestLocTo( location );
             lineLoc( location, closestPoint );
 
-        // Draw Pixel
-        stroke(255);
-        fill(255);
-        rect(location.x-size.x/2,location.y-size.y/2,size.x,size.y);
+            // Draw Pixel
+            stroke(255);
+            fill(255);
+            rect( (float)(location.x-size.x/2),(float)(location.y-size.y/2),(float)(size.x),(float)(size.y));
         }
     }
 

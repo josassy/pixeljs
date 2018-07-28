@@ -41,6 +41,11 @@ class Loc{
         double r = Math.sqrt( Math.pow( this.x, 2 )+Math.pow( this.y, 2 ) );
         return new Loc( this.x/r, this.y/r );
     }
+    
+    void draw(){
+      stroke(255,0,0);
+      ellipse((float)x, (float)y, 5.0, 5.0);
+    }
 }
 
 // Method that returns new location with less typing
@@ -103,6 +108,11 @@ class Line{
             return new Loc(x, y);
         }
     }
+    
+    void draw(){
+        stroke(255);
+        lineLoc(a,b);
+    }
 }
 
 class Wall extends Line{
@@ -133,6 +143,8 @@ abstract class Movable{
         Loc new_location = location.plus(velocity);
 
         Line step_segment = new Line(location,new_location);
+        
+        step_segment.draw();
 
         double closest_dist = Double.POSITIVE_INFINITY;
         Line selected_line = null;
@@ -140,6 +152,9 @@ abstract class Movable{
 
         for( Wall wall : walls ){
             hitPoint = step_segment.intersectionWith( wall );
+            
+            hitPoint.draw();
+            
             if( hitPoint != null ){
                 if( location.distanceTo(hitPoint) < closest_dist ){
                     closest_dist = location.distanceTo(hitPoint);
@@ -148,7 +163,7 @@ abstract class Movable{
             }
         }
 
-        if( hitPoint != null ){
+        if( hitPoint != null && selected_line != null ){
             new_location = hitPoint;
 
 
@@ -232,6 +247,7 @@ void setup(){
 
     // Create the walls
     aw(56,41,56,508,7);
+    /*
     aw(56,41,810,42,7);
     aw(222,39,222,333,4);
     aw(813,38,618,219,3);
@@ -249,7 +265,7 @@ void setup(){
     aw(471,335,394,412,3);
     aw(156,411,57,510,4);
     aw(155,412,395,412,3);
-    aw(810,507,56,507,8);
+    aw(810,507,56,507,8);*/
 }
 
 void draw(){  

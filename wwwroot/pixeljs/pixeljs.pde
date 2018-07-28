@@ -173,45 +173,47 @@ abstract class Movable{
     Loc size = l( 10, 10 );
     int speed = 5;
     Loc velocity = l(0,0);
-
+    
     void doMove(){
-
-        Loc new_location = location.plus(velocity);
-
-        Line step_segment = new Line(location,new_location);
+     
+        Loc newLocation = location.plus(velocity);
         
-        step_segment.draw();
-
-        double closest_dist = Double.POSITIVE_INFINITY;
-        Line selected_line = null;
-        Loc hitPoint = null;
-
+        
+        /*
+        //first make sure we don't actually cross any lines.
+        Line step = new Line( location, newLocation );
         for( Wall wall : walls ){
-            hitPoint = step_segment.intersectionWith( wall );
+          Loc intersection = step.intersectionWith(wall);
+          if( intersection != null ){
+            //be a bit back so we aren't sitting right on the wall
+            newLocation = intersection.plus(location.minus(intersection).unitLength().times(2));
+            step = new Line( location, newLocation );
+          }
+        }
+        */
+       
+        
+        //now deal with the thickness of the wall and moveable.
+        final int numberOfIterations = 5;
+        boolean didHit = true;
+        for( int i = 0; i < numberOfIterations && didHit; ++i ){
+          didHit = false;
+          for( Wall wall : walls ){
+            Loc closestPoint = wall.closestLocTo( newLocation );
             
+            double dist = newLocation.distanceTo(closestPoint);
             
-            if( hitPoint != null ){
-                hitPoint.draw();
-                
-                if( location.distanceTo(hitPoint) < closest_dist ){
-                    closest_dist = location.distanceTo(hitPoint);
-                    selected_line = wall;
-                }
+            //do we bump into this wall?
+            double overlap = .5*(size.x+wall.weight)-dist;
+            if( overlap > 0 ){
+              //move back till we are not bumping.  
+              newLocation = newLocation.plus( location.minus(closestPoint).unitLength().times(overlap) );
+              didHit = true;
             }
+          }
         }
-
-        if( hitPoint != null && selected_line != null ){
-            new_location = hitPoint;
-
-
-            Loc wallUnitLength = selected_line.aToB().unitLength();
-
-            double speedAlongWall = velocity.dotProduct( wallUnitLength );
-            velocity = wallUnitLength.times( speedAlongWall );
-        }
-
-
-        location = location.plus(velocity);
+        
+        location = newLocation;
     }
 }
 
@@ -285,7 +287,7 @@ void setup(){
     // Create the walls
     aw(56,41,56,508,7);
     
-    aw(56,41,810,42,7);/*
+    aw(56,41,810,42,7);
     aw(222,39,222,333,4);
     aw(813,38,618,219,3);
     aw(810,41,810,508,7);
@@ -302,7 +304,7 @@ void setup(){
     aw(471,335,394,412,3);
     aw(156,411,57,510,4);
     aw(155,412,395,412,3);
-    aw(810,507,56,507,8);*/
+    aw(810,507,56,507,8);/**/
 }
 
 void draw(){  

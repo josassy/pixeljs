@@ -84,8 +84,44 @@ class Line{
         }
         return result.rotateAround( a, myAngle );
     }
-
+    
+    //This intersection method makes sure it doesn't return a point
+    //if the point is off either of the lines.
     Loc intersectionWith( Line other ){
+      Loc intersection = this.infiniteIntersectionWith(other);
+      
+      
+      //Check if the point is off this line
+      
+      //If this is vertical check along y
+      if( this.a.x == this.b.x ){
+         if( intersection.y < Math.min( this.a.y, this.b.y ) ) return null;
+         if( intersection.y > Math.max( this.a.y, this.b.y ) ) return null;
+      }else{
+        //otherwise check along x
+        if( intersection.x < Math.min( this.a.x, this.b.x ) ) return null;
+        if( intersection.x > Math.max( this.a.x, this.b.x ) ) return null;
+      }
+      
+      //or the other.
+      
+      //If other is vertical check along y
+      if( other.a.x == other.b.x ){
+         if( intersection.y < Math.min( other.a.y, other.b.y ) ) return null;
+         if( intersection.y > Math.max( other.a.y, other.b.y ) ) return null;
+      }else{
+        //otherwise check along x
+        if( intersection.x < Math.min( other.a.x, other.b.x ) ) return null;
+        if( intersection.x > Math.max( other.a.x, other.b.x ) ) return null;
+      }
+      
+      //if the point isn't off this line or the other then it is a valid
+      //intersection
+      return intersection;
+    }
+
+    // https://www.geeksforgeeks.org/program-for-point-of-intersection-of-two-lines/
+    Loc infiniteIntersectionWith( Line other ){
         // Line AB represented as a1x + b1y = c1
         double a1 = this.b.y - this.a.y;
         double b1 = this.a.x - this.b.x;
@@ -153,9 +189,10 @@ abstract class Movable{
         for( Wall wall : walls ){
             hitPoint = step_segment.intersectionWith( wall );
             
-            hitPoint.draw();
             
             if( hitPoint != null ){
+                hitPoint.draw();
+                
                 if( location.distanceTo(hitPoint) < closest_dist ){
                     closest_dist = location.distanceTo(hitPoint);
                     selected_line = wall;
@@ -247,8 +284,8 @@ void setup(){
 
     // Create the walls
     aw(56,41,56,508,7);
-    /*
-    aw(56,41,810,42,7);
+    
+    aw(56,41,810,42,7);/*
     aw(222,39,222,333,4);
     aw(813,38,618,219,3);
     aw(810,41,810,508,7);

@@ -418,8 +418,7 @@ def main( args ):
 
             # save image for debugging purposes :)
             #misc.imsave( "line_image_" + str(len(lines)) + ".bmp", line_image  ) 
-
-
+            
             if len( lines ) > 100:
                 break
 

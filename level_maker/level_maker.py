@@ -164,8 +164,8 @@ def climb_hill( area, loc ):
         for edge in loc.get_eight_edges():
             if edge.x < 0: continue
             if edge.y < 0: continue
-            if edge.x > area.shape[1]: continue
-            if edge.y > area.shape[0]: continue
+            if edge.x >= area.shape[1]: continue
+            if edge.y >= area.shape[0]: continue
 
             if area[edge.y,edge.x] > area[loc.y,loc.x]:
                 loc = edge
@@ -183,6 +183,9 @@ def get_walk_value( area, line ):
 
     test_x_v = step_v/distance*(line.b.x-line.a.x)+line.a.x
     test_y_v = step_v/distance*(line.b.y-line.a.y)+line.a.y
+
+    off_screen = (test_x_v<0).any() or (test_x_v>width-1.001).any() or \
+                 (test_y_v<0).any() or (test_y_v>height-1.001).any()
 
     test_x_v = np.maximum( 0, np.minimum( width-1.001,  test_x_v ) )
     test_y_v = np.maximum( 0, np.minimum( height-1.001, test_y_v ) )
@@ -204,7 +207,7 @@ def get_walk_value( area, line ):
 
     sumz = np.sum(value_v)
 
-    bad_steps = (value_v == 0).any()
+    bad_steps = (value_v == 0).any() or off_screen
 
     if not bad_steps:
         #return sumz/len(step_v) + .6*distance
@@ -445,7 +448,7 @@ def main( args ):
 
 if(__name__ == '__main__'):
     if len( sys.argv ) < 2:
-        sys.argv.append( "test2.bmp" )
+        sys.argv.append( r"level design\level1.png" )
     
 
     main(sys.argv[1:])

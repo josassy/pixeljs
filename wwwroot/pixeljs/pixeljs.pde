@@ -8,6 +8,10 @@ class Level{
        pixel.reset();
        for( MapObject mapObject : mapObjects )mapObject.reset();
     }
+    
+    public void crash(){
+      reset();
+    }
 }
 
 Level currentLevel = new Level();
@@ -296,6 +300,25 @@ abstract class Movable extends MapObject{
     }
 }
 
+abstract class Bot extends Movable{
+  void activate(){
+      currentLevel.crash();
+  }
+}
+
+class TriggerBot extends Bot{
+  double angle = 0;
+  void draw(){
+    //TODO: Figure out our trigger line.
+    
+    
+      fill(255,214,19);
+      strokeWeight( 1 );
+      rect( (float)location.x, (float)location.y, (float)size.x, (float)size.y );
+      line( (float)location.x, (float)location.y, (float)(size.x*.5*Math.cos(angle)), (float)(size.y*.5*Math.sin(angle)) );
+  } 
+}
+
 //int score = 0 // THIS IS SUPER BAD DON'T TRY THIS AT HOME
 class Pixel extends Movable{      
     
@@ -378,6 +401,13 @@ void addGold( double x, double y ){
   gold.location = l(x,y);
   gold.size = l(5,5);
   currentLevel.mapObjects.add( gold );
+}
+
+void addTriggerBot( double x, double y, double angle ){
+  TriggerBot bot = new TriggerBot();
+  bot.location = l(x,y);
+  bot.size = l(10,10);
+  currentLevel.mapObjects.add( bot );
 }
 
 void gotoFirstLevel(){
@@ -467,5 +497,4 @@ void keyReleased(){
 	currentLevel.pixel.keyReleased();
 }
 
-//Currently wiring up MapObject.  Need to make it so that it draws and also have a function which creates an exit and adds it to the list.
-//After that we can make the pixel bumpCheck onto everything in that list.
+//Currently working on TriggerBot.  It needs to figure out its trigger line and make itself go.

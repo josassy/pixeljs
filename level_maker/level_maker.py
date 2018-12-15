@@ -415,9 +415,10 @@ def main( args ):
             lines.append( best_line )
 
             best_line.draw_on_image( line_image )
-            misc.imsave( "line_image_" + str(len(lines)) + ".bmp", line_image  )
 
-
+            # save image for debugging purposes :)
+            #misc.imsave( "line_image_" + str(len(lines)) + ".bmp", line_image  ) 
+            
             if len( lines ) > 100:
                 break
 
@@ -429,12 +430,22 @@ def main( args ):
         line.b = line.move_b_length( length- line.weight*.5 ).b
         line.a = line.move_a_length( length- line.weight ).a
 
+    # open new txt output file
+    filepath = 'walls.txt'
+    text_file = open(filepath, 'a')
+    text_file.write('## generated walls! ##\n\n')
+
     for line in lines:
         print( line.get_line_command() )
+        text_file.write( line.get_line_command() + '\n' ) 
+
+    print('saving file as ' + filepath)
+    text_file.close()
+    input('Press ENTER to exit...')
 
 if(__name__ == '__main__'):
     if len( sys.argv ) < 2:
-        sys.argv.append( "level_maker/test2.bmp" )
+        sys.argv.append( "test2.bmp" )
     
 
     main(sys.argv[1:])

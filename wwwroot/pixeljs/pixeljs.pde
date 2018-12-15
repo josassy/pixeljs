@@ -486,7 +486,7 @@ void gotoNextLevel(){
 }
 
 void setup(){
-	size(800,600);
+	size(800,800);
 	background(125);
 	fill(255);
 	frameRate(24);

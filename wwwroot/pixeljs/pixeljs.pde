@@ -215,6 +215,28 @@ class Exit extends MapObject{
   }
 }
 
+
+class Gold extends MapObject{
+  
+  boolean isVisible = true;
+  
+  public void draw(){
+    if (isVisible){     
+      fill(255,214,19);
+      strokeWeight( 1 );
+      rect( (float)location.x, (float)location.y, (float)size.x, (float)size.y );
+    }
+  }
+  public void activate(){
+    //score++;
+    isVisible = false;
+  }  
+  public void reset(){
+    super.reset();
+    isVisible = true;
+  }
+}
+
 abstract class Movable extends MapObject{
     int speed = 5;
     Loc velocity = l(0,0);
@@ -274,8 +296,10 @@ abstract class Movable extends MapObject{
     }
 }
 
-class Pixel extends Movable{
-    public Pixel( Loc location ){
+//int score = 0 // THIS IS SUPER BAD DON'T TRY THIS AT HOME
+class Pixel extends Movable{      
+    
+    public Pixel( Loc location){
         this.location = location;
     }
     void draw(){
@@ -283,6 +307,9 @@ class Pixel extends Movable{
         doMove();
         
         for( MapObject mapObject: currentLevel.mapObjects ) mapObject.bumpCheck( this );
+        
+        // Draw the score!
+        //TODO: draw score in the corner :)
 
         // Draw line to closest wall
         for( Wall wall : currentLevel.walls ){
@@ -346,6 +373,13 @@ void addExit( int x, int y ){
   currentLevel.mapObjects.add( exit );
 }
 
+void addGold( double x, double y ){
+  Gold gold = new Gold();
+  gold.location = l(x,y);
+  gold.size = l(5,5);
+  currentLevel.mapObjects.add( gold );
+}
+
 void gotoFirstLevel(){
   currentLevel = firstLevel;
   currentLevel.reset();
@@ -367,7 +401,7 @@ void gotoNextLevel(){
 }
 
 void setup(){
-	size(865,559);
+	size(800,600);
 	background(125);
 	fill(255);
 	frameRate(24);
@@ -397,6 +431,7 @@ void setup(){
     aw(810,507,56,507,8);
     
     addExit( 200, 200 );
+    addGold( 315, 225 );
     
     makeNextLevel();
     

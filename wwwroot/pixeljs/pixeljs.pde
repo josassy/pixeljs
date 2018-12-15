@@ -1,3 +1,13 @@
+class Level{
+    Pixel pixel = new Pixel( l(100, 100));
+    ArrayList<Wall> walls = new ArrayList<Wall>();
+    ArrayList<MapObject> mapObjects = new ArrayList<MapObject>();
+    Level nextLevel = null;
+}
+
+Level currentLevel = new Level();
+
+Level firstLevel = currentLevel;
 
 class Loc{
     double x;
@@ -167,10 +177,30 @@ class Wall extends Line{
     }
 }
 
-abstract class Movable{
+abstract class MapObject{
     Loc location = l( 100, 100 );
     abstract public void draw();
     Loc size = l( 10, 10 );
+    abstract public void activate();
+    
+    void bumpCheck( MapObject other ){
+      if( other.location.distanceTo( this.location ) < (other.size.x+this.size.x)/2 ){
+        this.activate();
+      }
+    }
+}
+
+class Exit extends MapObject{
+  public void draw(){
+    fill(255,0,0);
+    ellipse( (float)location.x, (float)location.y, (float)size.x, (float)size.y );
+  }
+  public void activate(){
+    gotoNextLevel();
+  }
+}
+
+abstract class Movable extends MapObject{
     int speed = 5;
     Loc velocity = l(0,0);
     
@@ -198,7 +228,7 @@ abstract class Movable{
         boolean didHit = true;
         for( int i = 0; i < numberOfIterations && didHit; ++i ){
           didHit = false;
-          for( Wall wall : walls ){
+          for( Wall wall : currentLevel.walls ){
             Loc closestPoint = wall.closestLocTo( newLocation );
             
             double dist = newLocation.distanceTo(closestPoint);
@@ -226,7 +256,7 @@ class Pixel extends Movable{
         doMove();
 
         // Draw line to closest wall
-        for( Wall wall : walls ){
+        for( Wall wall : currentLevel.walls ){
             stroke(255,0,0); // Change line color to Red
             strokeWeight(1); // Change line weight to 1 px
             Loc closestPoint = wall.closestLocTo( location );
@@ -267,13 +297,27 @@ class Pixel extends Movable{
 
 String lastString = "";
 
-Pixel pixel = new Pixel( l(100, 100));
 
-ArrayList<Wall> walls = new ArrayList<Wall>();
-
+//Level maker commands.
 // Create new Wall object and it to the walls list
 void aw( int x1, int y1, int x2, int y2, int weight ){
-    walls.add( new Wall(l(x1,y1),l(x2,y2), weight) );
+    currentLevel.walls.add( new Wall(l(x1,y1),l(x2,y2), weight) );
+}
+
+void gotoFirstLevel(){
+  currentLevel = firstLevel;
+}
+
+void makeNextLevel(){
+  Level nextLevel = new Level();
+  currentLevel.nextLevel = nextLevel;
+  currentLevel = nextLevel;
+}
+
+void gotoNextLevel(){
+  if( currentLevel.nextLevel != null ){
+    currentLevel = currentLevel.nextLevel;
+  }
 }
 
 void setup(){
@@ -304,13 +348,23 @@ void setup(){
     aw(471,335,394,412,3);
     aw(156,411,57,510,4);
     aw(155,412,395,412,3);
-    aw(810,507,56,507,8);/**/
+    aw(810,507,56,507,8);
+    
+    makeNextLevel();
+    
+    aw(621,301,764,301,3);
+    aw(701,301,701,509,4);
+    aw(222,334,396,334,3);
+    aw(471,335,394,412,3);
+    aw(156,411,57,510,4);
+    
+    gotoFirstLevel();
 }
 
 void draw(){  
 	background(0);
-    pixel.draw();
-    for(Wall wall : walls){
+    currentLevel.pixel.draw();
+    for(Wall wall : currentLevel.walls){
         wall.draw();
     }
 	fill(0, 102, 153);
@@ -318,9 +372,12 @@ void draw(){
 }
 
 void keyPressed(){
-    pixel.keyPressed();
+    currentLevel.pixel.keyPressed();
 }
 
 void keyReleased(){
-	pixel.keyReleased();
+	currentLevel.pixel.keyReleased();
 }
+
+//Currently wiring up MapObject.  Need to make it so that it draws and also have a function which creates an exit and adds it to the list.
+//After that we can make the pixel bumpCheck onto everything in that list.

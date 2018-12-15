@@ -3,6 +3,11 @@ class Level{
     ArrayList<Wall> walls = new ArrayList<Wall>();
     ArrayList<MapObject> mapObjects = new ArrayList<MapObject>();
     Level nextLevel = null;
+    
+    public void reset(){
+       pixel.reset();
+       for( MapObject mapObject : mapObjects )mapObject.reset();
+    }
 }
 
 Level currentLevel = new Level();
@@ -55,6 +60,10 @@ class Loc{
     void draw(){
       stroke(255,0,0);
       ellipse((float)x, (float)y, 5.0, 5.0);
+    }
+    
+    Loc copy(){
+      return new Loc(this.x, this.y);
     }
 }
 
@@ -179,20 +188,26 @@ class Wall extends Line{
 
 abstract class MapObject{
     Loc location = l( 100, 100 );
+
     abstract public void draw();
     Loc size = l( 10, 10 );
     abstract public void activate();
+
+    void reset(){
+    }
     
     void bumpCheck( MapObject other ){
       if( other.location.distanceTo( this.location ) < (other.size.x+this.size.x)/2 ){
         this.activate();
       }
     }
+    
 }
 
 class Exit extends MapObject{
   public void draw(){
-    fill(255,0,0);
+    fill(00,0,000);
+    strokeWeight( 1 );
     ellipse( (float)location.x, (float)location.y, (float)size.x, (float)size.y );
   }
   public void activate(){
@@ -203,6 +218,18 @@ class Exit extends MapObject{
 abstract class Movable extends MapObject{
     int speed = 5;
     Loc velocity = l(0,0);
+    
+    Loc startLocation = l( 100, 100 );
+    
+    void setStartLocation( Loc newStartLocation ){
+      startLocation = newStartLocation;
+      location = startLocation.copy();
+    }
+    
+    void reset(){
+      location = startLocation.copy(); 
+      velocity = l(0,0);
+    }
     
     void doMove(){
      
@@ -254,6 +281,8 @@ class Pixel extends Movable{
     void draw(){
         // Call inherited Movable method
         doMove();
+        
+        for( MapObject mapObject: currentLevel.mapObjects ) mapObject.bumpCheck( this );
 
         // Draw line to closest wall
         for( Wall wall : currentLevel.walls ){
@@ -278,6 +307,10 @@ class Pixel extends Movable{
             velocity.x = -speed;
         }else if(keyCode == RIGHT ){
             velocity.x = speed;
+        }else if(keyCode == 'R' ){
+            gotoFirstLevel();
+        }else if(keyCode == 'L' ){
+            currentLevel.reset();
         }else{
             lastString = "keyPress " + keyCode;
         }
@@ -292,7 +325,9 @@ class Pixel extends Movable{
             lastString = "keyReleased " + keyCode;
         }
     }
-
+    void activate(){
+      //do nothing.
+    }
 }
 
 String lastString = "";
@@ -304,8 +339,16 @@ void aw( int x1, int y1, int x2, int y2, int weight ){
     currentLevel.walls.add( new Wall(l(x1,y1),l(x2,y2), weight) );
 }
 
+void addExit( int x, int y ){
+  Exit exit = new Exit();
+  exit.location = l(x,y);
+  exit.size = l(20,20);
+  currentLevel.mapObjects.add( exit );
+}
+
 void gotoFirstLevel(){
   currentLevel = firstLevel;
+  currentLevel.reset();
 }
 
 void makeNextLevel(){
@@ -317,6 +360,9 @@ void makeNextLevel(){
 void gotoNextLevel(){
   if( currentLevel.nextLevel != null ){
     currentLevel = currentLevel.nextLevel;
+    currentLevel.reset();
+  }else{
+    //TODO: throw a party?
   }
 }
 
@@ -350,6 +396,8 @@ void setup(){
     aw(155,412,395,412,3);
     aw(810,507,56,507,8);
     
+    addExit( 200, 200 );
+    
     makeNextLevel();
     
     aw(621,301,764,301,3);
@@ -357,6 +405,8 @@ void setup(){
     aw(222,334,396,334,3);
     aw(471,335,394,412,3);
     aw(156,411,57,510,4);
+    
+    addExit( 200, 300 );
     
     gotoFirstLevel();
 }
@@ -366,6 +416,9 @@ void draw(){
     currentLevel.pixel.draw();
     for(Wall wall : currentLevel.walls){
         wall.draw();
+    }
+    for(MapObject mapObject : currentLevel.mapObjects){
+      mapObject.draw();
     }
 	fill(0, 102, 153);
 	text(lastString, 20,20);

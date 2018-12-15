@@ -386,18 +386,20 @@ class Pixel extends Movable{
         // Draw the score!
         //TODO: draw score in the corner :)
 
-        // Draw line to closest wall
-        for( Wall wall : currentLevel.walls ){
-            stroke(255,0,0); // Change line color to Red
-            strokeWeight(1); // Change line weight to 1 px
-            Loc closestPoint = wall.closestLocTo( location );
-            lineLoc( location, closestPoint );
-
-            // Draw Pixel
-            stroke(255);
-            fill(255);
-            rect( (float)(location.x-size.x/2),(float)(location.y-size.y/2),(float)(size.x),(float)(size.y));
-        }
+        
+        //// Draw line to closest wall
+        //for( Wall wall : currentLevel.walls ){
+        //    stroke(255,0,0); // Change line color to Red
+        //    strokeWeight(1); // Change line weight to 1 px
+        //    Loc closestPoint = wall.closestLocTo( location );
+        //    lineLoc( location, closestPoint );
+        //}
+        
+        // Draw Pixel
+        stroke(255);
+        fill(255);
+        rect( (float)(location.x-size.x/2),(float)(location.y-size.y/2),(float)(size.x),(float)(size.y));
+        
     }
 
     void keyPressed(){

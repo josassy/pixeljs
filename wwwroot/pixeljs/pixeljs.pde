@@ -1,3 +1,6 @@
+//processing.js doesn't like Double.MAX_VALUE
+float FLOAT_MAX_VALUE = 3.4028234663852886E38;
+
 class Level{
     Pixel pixel = new Pixel( l(100, 100));
     ArrayList<Wall> walls = new ArrayList<Wall>();
@@ -24,6 +27,10 @@ class Loc{
     public Loc(double x, double y){
         this.x = x;
         this.y = y;
+    }
+    
+    public String toString(){
+      return "(" + x + "," + y + ")";
     }
 
     // Adds Loc to a velocity
@@ -74,6 +81,10 @@ class Loc{
 // Method that returns new location with less typing
 Loc l( double x, double y ){
     return new Loc( x, y );
+}
+
+Loc lAng( double r, double ang ){
+    return new Loc( r*Math.cos(ang), r*Math.sin(ang) );
 }
 
 // Can't be just line because javascript can't tell it apart.
@@ -160,7 +171,7 @@ class Line{
         if (determinant == 0){
             // The lines are parallel. This is simplified
             // by returning a pair of FLT_MAX
-            return new Loc(Double.MAX_VALUE, Double.MAX_VALUE);
+            return new Loc(FLOAT_MAX_VALUE, FLOAT_MAX_VALUE);
         }else{
             double x = (b2*c1 - b1*c2)/determinant;
             double y = (a1*c2 - a2*c1)/determinant;
@@ -301,21 +312,62 @@ abstract class Movable extends MapObject{
 }
 
 abstract class Bot extends Movable{
+  double startAngle = 0;
+  double angle = 0;
+  double speed = 10;
+  void setStartAngle( double newAngle ){
+    angle = newAngle;
+    startAngle = newAngle;
+  }
   void activate(){
       currentLevel.crash();
+  }
+  void reset(){
+    super.reset();
+    angle = startAngle;
   }
 }
 
 class TriggerBot extends Bot{
-  double angle = 0;
   void draw(){
-    //TODO: Figure out our trigger line.
     
+    //Figure out our trigger line.
+    //It extends in the direction we are pointing to
+    //the nearest wall or 800.
+    Loc otherEnd = this.location.plus( lAng(800,angle) );
+    Line triggerLine = new Line( this.location, otherEnd );
+    Loc closestWallPoint = null;
+    for( Wall wall : currentLevel.walls ){
+        Loc intersection = triggerLine.intersectionWith(wall);
+        if( (intersection != null) &&
+            (closestWallPoint == null ||
+                this.location.distanceTo(intersection) <
+                this.location.distanceTo(closestWallPoint)) ){
+            closestWallPoint = intersection;
+        }
+    }
+    if( closestWallPoint != null ) triggerLine = new Line( this.location, closestWallPoint );
+
+    //now check if the pixel is currently going to step over it
+    //put a 2x on it to make it just a tad more sensitive.
+    Loc pixelNewLocation = currentLevel.pixel.location.plus( currentLevel.pixel.velocity.times(2) );
+    Line pixelStep = new Line( currentLevel.pixel.location, pixelNewLocation );
+
+    if( triggerLine.intersectionWith(pixelStep) != null ){
+        //Charge!!
+        this.velocity = lAng( speed, angle );
+    }
+
+    doMove();
+
+    //now actually draw the bot.
+    fill(255,214,19); //<>//
+    strokeWeight( 1 );
+    ellipse( (float)location.x, (float)location.y, (float)size.x, (float)size.y );
+    Loc lineOtherEnd = lAng(size.x,angle).plus( location );
+    stroke(255);
+    line( (float)location.x, (float)location.y, (float)lineOtherEnd.x, (float)lineOtherEnd.y );
     
-      fill(255,214,19);
-      strokeWeight( 1 );
-      rect( (float)location.x, (float)location.y, (float)size.x, (float)size.y );
-      line( (float)location.x, (float)location.y, (float)(size.x*.5*Math.cos(angle)), (float)(size.y*.5*Math.sin(angle)) );
   } 
 }
 
@@ -404,8 +456,9 @@ void addGold( double x, double y ){
 }
 
 void addTriggerBot( double x, double y, double angle ){
-  TriggerBot bot = new TriggerBot();
-  bot.location = l(x,y);
+  TriggerBot bot = new TriggerBot(); //<>//
+  bot.setStartLocation( l(x,y) );
+  bot.setStartAngle( angle );
   bot.size = l(10,10);
   currentLevel.mapObjects.add( bot );
 }
@@ -462,6 +515,8 @@ void setup(){
     
     addExit( 200, 200 );
     addGold( 315, 225 );
+    addTriggerBot( 500, 300, 0 );
+    addTriggerBot( 100, 50, 1.2 );
     
     makeNextLevel();
     

@@ -253,7 +253,7 @@ class Gold extends MapObject{
 }
 
 abstract class Movable extends MapObject{
-    int speed = 5;
+    int speed = 10;
     Loc velocity = l(0,0);
     
     Loc startLocation = l( 100, 100 );
@@ -315,6 +315,9 @@ abstract class Bot extends Movable{
   double startAngle = 0;
   double angle = 0;
   double speed = 10;
+  public Bot(){
+    this.size = l(25,25);
+  }
   void setStartAngle( double newAngle ){
     angle = newAngle;
     startAngle = newAngle;
@@ -376,6 +379,7 @@ class Pixel extends Movable{
     
     public Pixel( Loc location){
         this.location = location;
+        this.size = l(25,25);
     }
     void draw(){
         // Call inherited Movable method
@@ -486,12 +490,32 @@ void gotoNextLevel(){
 }
 
 void setup(){
-	size(800,800);
+	size(1000,800);
 	background(125);
 	fill(255);
 	frameRate(24);
 	textSize(32);
 	//textFont("mono.ttf", 32);
+
+    aw(394,5,395,294,10);
+    aw(4,94,294,94,9);
+    aw(594,96,594,555,9);
+    aw(487,294,93,293,9);
+    aw(486,294,513,394,11);
+    aw(6,394,395,394,9);
+    aw(6,483,495,484,9);
+    aw(144,483,144,618,9);
+    aw(245,554,244,619,9);
+    aw(243,554,595,554,9);
+    aw(921,554,922,694,9);
+    aw(64,596,65,695,9);
+    aw(244,617,594,619,9);
+    aw(593,618,594,694,9);
+    aw(5,694,993,694,10);
+    
+    addExit( 200, 200 );
+    
+    makeNextLevel();
 
     // Create the walls
     aw(56,41,56,508,7);

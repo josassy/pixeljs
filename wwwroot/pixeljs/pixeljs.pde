@@ -2,7 +2,7 @@
 float FLOAT_MAX_VALUE = 3.4028234663852886E38;
 
 class Level{
-    Pixel pixel = new Pixel( l(100, 100));
+    Pixel pixel = new Pixel( l(0,0)); // This pixel is overwritten in initial map setup. 
     ArrayList<Wall> walls = new ArrayList<Wall>();
     ArrayList<MapObject> mapObjects = new ArrayList<MapObject>();
     Level nextLevel = null;
@@ -448,6 +448,12 @@ void aw( int x1, int y1, int x2, int y2, int weight ){
     currentLevel.walls.add( new Wall(l(x1,y1),l(x2,y2), weight) );
 }
 
+void addPixel (Loc location){
+    Pixel pixel = new Pixel( location );
+    currentLevel.pixel = pixel;
+}
+
+//TODO: make these use a Loc parameter
 void addExit( int x, int y ){
   Exit exit = new Exit();
   exit.location = l(x,y);
@@ -466,7 +472,7 @@ void addTriggerBot( double x, double y, double angle ){
   TriggerBot bot = new TriggerBot(); //<>//
   bot.setStartLocation( l(x,y) );
   bot.setStartAngle( angle );
-  bot.size = l(10,10);
+  //bot.size = l(10,10); // already set in constructor. Do we want to set it here instead?
   currentLevel.mapObjects.add( bot );
 }
 
@@ -509,7 +515,7 @@ void setup(){
     aw(0,1000,1000,1000,1);
     aw(1000,0,1000,1000,1);
 
-    // manually typed walls from svg file
+    // manually typed walls from Illustrator
 
     // horizontal walls
     aw(0,95,300,95,10);
@@ -567,6 +573,9 @@ void setup(){
     // aw(5,694,993,694,10);
     
     addExit( 200, 200 );
+    
+    //TODO: Figure out why the pixel isn't being created where we want it.
+    addPixel( l( 0,0 ));
     
     // LEVEL 2
 

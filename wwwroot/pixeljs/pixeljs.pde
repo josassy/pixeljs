@@ -8,12 +8,13 @@ class Level{
     Level nextLevel = null;
     
     public void reset(){
-       pixel.reset();
-       for( MapObject mapObject : mapObjects )mapObject.reset();
+        pixel.reset();
+        for( MapObject mapObject : mapObjects )mapObject.reset();
+        isPlaying = true;
     }
     
     public void crash(){
-      reset();
+        isPlaying = false;
     }
 }
 
@@ -30,7 +31,7 @@ class Loc{
     }
     
     public String toString(){
-      return "(" + x + "," + y + ")";
+        return "(" + x + "," + y + ")";
     }
 
     // Adds Loc to a velocity
@@ -69,12 +70,12 @@ class Loc{
     }
     
     void draw(){
-      stroke(255,0,0);
-      ellipse((float)x, (float)y, 5.0, 5.0);
+        stroke(255,0,0);
+        ellipse((float)x, (float)y, 5.0, 5.0);
     }
     
     Loc copy(){
-      return new Loc(this.x, this.y);
+        return new Loc(this.x, this.y);
     }
 }
 
@@ -123,60 +124,60 @@ class Line{
     //This intersection method makes sure it doesn't return a point
     //if the point is off either of the lines.
     Loc intersectionWith( Line other ){
-      Loc intersection = this.infiniteIntersectionWith(other);
-      
-      
-      //Check if the point is off this line
-      
-      //If this is vertical check along y
-      if( this.a.x == this.b.x ){
-         if( intersection.y < Math.min( this.a.y, this.b.y ) ) return null;
-         if( intersection.y > Math.max( this.a.y, this.b.y ) ) return null;
-      }else{
-        //otherwise check along x
-        if( intersection.x < Math.min( this.a.x, this.b.x ) ) return null;
-        if( intersection.x > Math.max( this.a.x, this.b.x ) ) return null;
-      }
-      
-      //or the other.
-      
-      //If other is vertical check along y
-      if( other.a.x == other.b.x ){
-         if( intersection.y < Math.min( other.a.y, other.b.y ) ) return null;
-         if( intersection.y > Math.max( other.a.y, other.b.y ) ) return null;
-      }else{
-        //otherwise check along x
-        if( intersection.x < Math.min( other.a.x, other.b.x ) ) return null;
-        if( intersection.x > Math.max( other.a.x, other.b.x ) ) return null;
-      }
-      
-      //if the point isn't off this line or the other then it is a valid
-      //intersection
-      return intersection;
-    }
-
-    // https://www.geeksforgeeks.org/program-for-point-of-intersection-of-two-lines/
-    Loc infiniteIntersectionWith( Line other ){
-        // Line AB represented as a1x + b1y = c1
-        double a1 = this.b.y - this.a.y;
-        double b1 = this.a.x - this.b.x;
-        double c1 = a1*(this.a.x) + b1*(this.a.y);
-      
-        // Line CD represented as a2x + b2y = c2
-        double a2 = other.b.y - other.a.y;
-        double b2 = other.a.x - other.b.x;
-        double c2 = a2*(other.a.x)+ b2*(other.a.y);
-      
-        double determinant = a1*b2 - a2*b1;
-      
-        if (determinant == 0){
-            // The lines are parallel. This is simplified
-            // by returning a pair of FLT_MAX
-            return new Loc(FLOAT_MAX_VALUE, FLOAT_MAX_VALUE);
+        Loc intersection = this.infiniteIntersectionWith(other);
+        
+        
+        //Check if the point is off this line
+        
+        //If this is vertical check along y
+        if( this.a.x == this.b.x ){
+            if( intersection.y < Math.min( this.a.y, this.b.y ) ) return null;
+            if( intersection.y > Math.max( this.a.y, this.b.y ) ) return null;
         }else{
-            double x = (b2*c1 - b1*c2)/determinant;
-            double y = (a1*c2 - a2*c1)/determinant;
-            return new Loc(x, y);
+            //otherwise check along x
+            if( intersection.x < Math.min( this.a.x, this.b.x ) ) return null;
+            if( intersection.x > Math.max( this.a.x, this.b.x ) ) return null;
+        }
+        
+        //or the other.
+        
+        //If other is vertical check along y
+        if( other.a.x == other.b.x ){
+            if( intersection.y < Math.min( other.a.y, other.b.y ) ) return null;
+            if( intersection.y > Math.max( other.a.y, other.b.y ) ) return null;
+        }else{
+            //otherwise check along x
+            if( intersection.x < Math.min( other.a.x, other.b.x ) ) return null;
+            if( intersection.x > Math.max( other.a.x, other.b.x ) ) return null;
+        }
+        
+        //if the point isn't off this line or the other then it is a valid
+        //intersection
+        return intersection;
+        }
+
+        // https://www.geeksforgeeks.org/program-for-point-of-intersection-of-two-lines/
+        Loc infiniteIntersectionWith( Line other ){
+            // Line AB represented as a1x + b1y = c1
+            double a1 = this.b.y - this.a.y;
+            double b1 = this.a.x - this.b.x;
+            double c1 = a1*(this.a.x) + b1*(this.a.y);
+        
+            // Line CD represented as a2x + b2y = c2
+            double a2 = other.b.y - other.a.y;
+            double b2 = other.a.x - other.b.x;
+            double c2 = a2*(other.a.x)+ b2*(other.a.y);
+        
+            double determinant = a1*b2 - a2*b1;
+        
+            if (determinant == 0){
+                // The lines are parallel. This is simplified
+                // by returning a pair of FLT_MAX
+                return new Loc(FLOAT_MAX_VALUE, FLOAT_MAX_VALUE);
+            }else{
+                double x = (b2*c1 - b1*c2)/determinant;
+                double y = (a1*c2 - a2*c1)/determinant;
+                return new Loc(x, y);
         }
     }
     
@@ -191,8 +192,8 @@ class Wall extends Line{
     int weight = 5;
 
     public Wall( Loc a, Loc b, int weight ){
-      super( a,b );
-      this.weight = weight;
+        super( a,b );
+        this.weight = weight;
     }
 
     void draw(){
@@ -210,48 +211,51 @@ abstract class MapObject{
     Loc size = l( 10, 10 );
     abstract public void activate();
 
-    void reset(){
-    }
+    abstract public void reset();
     
     void bumpCheck( MapObject other ){
-      if( other.location.distanceTo( this.location ) < (other.size.x+this.size.x)/2 ){
-        this.activate();
-      }
+        if( other.location.distanceTo( this.location ) < (other.size.x+this.size.x)/2 ){
+            this.activate();
+        }
     }
     
 }
 
 class Exit extends MapObject{
-  public void draw(){
-    fill(00,0,000);
-    strokeWeight( 1 );
-    ellipse( (float)location.x, (float)location.y, (float)size.x, (float)size.y );
-  }
-  public void activate(){
-    gotoNextLevel();
-  }
+
+    Loc size = l( 25, 25 );
+
+    public void draw(){
+        fill(00,0,000);
+        strokeWeight( 1 );
+        ellipse( (float)location.x, (float)location.y, (float)size.x, (float)size.y );
+    }
+    public void activate(){
+        printMessage("Congrats, you found the exit!")
+        gotoNextLevel();
+    }
 }
 
 
 class Gold extends MapObject{
-  
-  boolean isVisible = true;
-  
-  public void draw(){
-    if (isVisible){     
-      fill(255,214,19);
-      strokeWeight( 1 );
-      rect( (float)location.x, (float)location.y, (float)size.x, (float)size.y );
+    boolean isVisible = true;
+    
+    public void draw(){
+        if (isVisible){     
+        fill(255,214,19);
+        strokeWeight( 1 );
+        rect( (float)location.x, (float)location.y, (float)size.x, (float)size.y );
+        }
     }
-  }
-  public void activate(){
-    //score++;
-    isVisible = false;
-  }  
-  public void reset(){
-    super.reset();
-    isVisible = true;
-  }
+    public void activate(){
+        //score++;
+        printMessage("You hit Gold! Time +1")
+        isVisible = false;
+    }  
+    public void reset(){
+        super.reset();
+        isVisible = true;
+    }
 }
 
 abstract class Movable extends MapObject{
@@ -260,13 +264,13 @@ abstract class Movable extends MapObject{
     Loc startLocation = l( 0, 0 ); // Default value of 0,0. Set starting location using setStartLocation().
     
     void setStartLocation( Loc newStartLocation ){
-      startLocation = newStartLocation;
-      location = startLocation.copy();
+        startLocation = newStartLocation;
+        location = startLocation.copy();
     }
     
     void reset(){
-      location = startLocation.copy(); 
-      velocity = l(0,0);
+        location = startLocation.copy(); 
+        velocity = l(0,0);
     }
     
     void doMove(){
@@ -292,20 +296,20 @@ abstract class Movable extends MapObject{
         final int numberOfIterations = 5;
         boolean didHit = true;
         for( int i = 0; i < numberOfIterations && didHit; ++i ){
-          didHit = false;
-          for( Wall wall : currentLevel.walls ){
-            Loc closestPoint = wall.closestLocTo( newLocation );
-            
-            double dist = newLocation.distanceTo(closestPoint);
-            
-            //do we bump into this wall?
-            double overlap = .5*(size.x+wall.weight)-dist;
-            if( overlap > 0 ){
-              //move back till we are not bumping.  
-              newLocation = newLocation.plus( location.minus(closestPoint).unitLength().times(overlap) );
-              didHit = true;
+            didHit = false;
+            for( Wall wall : currentLevel.walls ){
+                Loc closestPoint = wall.closestLocTo( newLocation );
+                
+                double dist = newLocation.distanceTo(closestPoint);
+                
+                //do we bump into this wall?
+                double overlap = .5*(size.x+wall.weight)-dist;
+                if( overlap > 0 ){
+                    //move back till we are not bumping.  
+                    newLocation = newLocation.plus( location.minus(closestPoint).unitLength().times(overlap) );
+                    didHit = true;
+                }
             }
-          }
         }
         
         location = newLocation;
@@ -313,67 +317,67 @@ abstract class Movable extends MapObject{
 }
 
 abstract class Bot extends Movable{
-  double startAngle = 0;
-  double angle = 0;
-  double speed = 10;
-  public Bot(){
-    this.size = l(25,25);
-  }
-  void setStartAngle( double newAngle ){
-    angle = newAngle;
-    startAngle = newAngle;
-  }
-  void activate(){
-      currentLevel.crash();
-  }
-  void reset(){
-    super.reset();
-    angle = startAngle;
-  }
+    double startAngle = 0;
+    double angle = 0;
+    double speed = 12;
+    public Bot(){
+        this.size = l(25,25);
+    }
+    void setStartAngle( double newAngle ){
+        angle = newAngle;
+        startAngle = newAngle;
+    }
+    void activate(){
+        printMessage("You got hit by a Bot! Press 'r' to restart or ESC to exit.")
+        currentLevel.crash();
+    }
+    void reset(){
+        super.reset();
+        angle = startAngle;
+    }
 }
 
 class TriggerBot extends Bot{
-  void draw(){
-    
-    //Figure out our trigger line.
-    //It extends in the direction we are pointing to
-    //the nearest wall or 800.
-    Loc otherEnd = this.location.plus( lAng(800,angle) );
-    Line triggerLine = new Line( this.location, otherEnd );
-    Loc closestWallPoint = null;
-    for( Wall wall : currentLevel.walls ){
-        Loc intersection = triggerLine.intersectionWith(wall);
-        if( (intersection != null) &&
-            (closestWallPoint == null ||
-                this.location.distanceTo(intersection) <
-                this.location.distanceTo(closestWallPoint)) ){
-            closestWallPoint = intersection;
+    void draw(){       
+        //Figure out our trigger line.
+        //It extends in the direction we are pointing to
+        //the nearest wall or 800.
+        Loc otherEnd = this.location.plus( lAng(800,angle) );
+        Line triggerLine = new Line( this.location, otherEnd );
+        Loc closestWallPoint = null;
+        for( Wall wall : currentLevel.walls ){
+            Loc intersection = triggerLine.intersectionWith(wall);
+            if( (intersection != null) &&
+                (closestWallPoint == null ||
+                    this.location.distanceTo(intersection) <
+                    this.location.distanceTo(closestWallPoint)) ){
+                closestWallPoint = intersection;
+            }
         }
-    }
-    if( closestWallPoint != null ) triggerLine = new Line( this.location, closestWallPoint );
+        if( closestWallPoint != null ) triggerLine = new Line( this.location, closestWallPoint );
 
-    //now check if the pixel is currently going to step over it
-    //put a 2x on it to make it just a tad more sensitive.
-    Loc pixelNewLocation = currentLevel.pixel.location.plus( currentLevel.pixel.velocity.times(2) );
-    Line pixelStep = new Line( currentLevel.pixel.location, pixelNewLocation );
+        //now check if the pixel is currently going to step over it
+        //put a 2x on it to make it just a tad more sensitive.
+        Loc pixelNewLocation = currentLevel.pixel.location.plus( currentLevel.pixel.velocity.times(2) );
+        Line pixelStep = new Line( currentLevel.pixel.location, pixelNewLocation );
 
-    if( triggerLine.intersectionWith(pixelStep) != null ){
-        //Charge!!
-        this.velocity = lAng( speed, angle );
-    }
+        if( triggerLine.intersectionWith(pixelStep) != null ){
+            //Charge!!
+            this.velocity = lAng( speed, angle );
+            printMessage("The bot sees you!");
+        }
 
-    doMove();
+        doMove();
 
-    //now actually draw the bot. //<>// //<>//
-    fill(211, 0, 24); // red
-    noStroke();
-    ellipse( (float)location.x, (float)location.y, (float)size.x, (float)size.y );
-    Loc lineOtherEnd = lAng(size.x/2,angle).plus( location );
-    stroke(255);
-    strokeWeight( 2 );
-    line( (float)location.x, (float)location.y, (float)lineOtherEnd.x, (float)lineOtherEnd.y );
-    
-  } 
+        //now actually draw the bot. //<>// //<>//
+        fill(211, 0, 24); // red
+        noStroke();
+        ellipse( (float)location.x, (float)location.y, (float)size.x, (float)size.y );
+        Loc lineOtherEnd = lAng(size.x/2,angle).plus( location );
+        stroke(255);
+        strokeWeight( 2 );
+        line( (float)location.x, (float)location.y, (float)lineOtherEnd.x, (float)lineOtherEnd.y );        
+    } 
 }
 
 //int score = 0 // THIS IS SUPER BAD DON'T TRY THIS AT HOME
@@ -457,7 +461,6 @@ class Pixel extends Movable{
 
 String lastString = "";
 
-
 //Level maker commands.
 // Create new Wall object and it to the walls list
 void aw( int x1, int y1, int x2, int y2, int weight ){
@@ -468,61 +471,63 @@ void addPixel ( double x, double y ){
     Pixel pixel = new Pixel();
     pixel.setStartLocation(l(x,y));
     currentLevel.pixel = pixel;
-} //<>//
- //<>//
+}
+
 //TODO: make these use a Loc parameter
 void addExit( int x, int y ){
-  Exit exit = new Exit();
-  exit.location = l(x,y);
-  exit.size = l(20,20);
-  currentLevel.mapObjects.add( exit );
+    Exit exit = new Exit();
+    exit.location = l(x,y);
+    exit.size = l(20,20);
+    currentLevel.mapObjects.add( exit );
 }
 
 void addGold( double x, double y ){
-  Gold gold = new Gold();
-  gold.location = l(x,y);
-  gold.size = l(10,10);
-  currentLevel.mapObjects.add( gold );
+    Gold gold = new Gold();
+    gold.location = l(x,y);
+    gold.size = l(10,10);
+    currentLevel.mapObjects.add( gold );
 }
 
 void addTriggerBot( double x, double y, double angle ){
-  TriggerBot bot = new TriggerBot(); //<>//
-  bot.setStartLocation( l(x,y) );
-  bot.setStartAngle( angle );
-  currentLevel.mapObjects.add( bot );
+    TriggerBot bot = new TriggerBot(); //<>//
+    bot.setStartLocation( l(x,y) );
+    bot.setStartAngle( angle );
+    currentLevel.mapObjects.add( bot );
 }
 
 void gotoFirstLevel(){
-  currentLevel = firstLevel;
-  currentLevel.reset();
+    currentLevel = firstLevel;
+    currentLevel.reset();
 }
 
 void makeNextLevel(){
-  Level nextLevel = new Level();
-  currentLevel.nextLevel = nextLevel;
-  currentLevel = nextLevel;
+    Level nextLevel = new Level();
+    currentLevel.nextLevel = nextLevel;
+    currentLevel = nextLevel;
 }
 
 void gotoNextLevel(){
-  if( currentLevel.nextLevel != null ){
-    currentLevel = currentLevel.nextLevel;
-    currentLevel.reset();
-  }else{
-    //TODO: throw a party?
-    // maybe go to the main menu here?
-  }
+    if( currentLevel.nextLevel != null ){
+        currentLevel = currentLevel.nextLevel;
+        currentLevel.reset();
+    }else{
+        //TODO: throw a party?
+        // maybe go to the main menu here?
+    }
 }
 
 void setup(){
 
     // INITIAL SETUP
 
-	size(1000,800);
-	background(125);
-	fill(255);
-	frameRate(24);
-	textSize(32);
-	//textFont("mono.ttf", 32);
+      size(1000,800);
+      background(125);
+      fill(255);
+      frameRate(24);
+      textSize(32);
+
+    // Add fonts
+    roboto = createFont("Roboto",20);
 
     // LEVEL 1
 
@@ -531,6 +536,9 @@ void setup(){
     aw(0,0,1000,0,1);
     aw(0,1000,1000,1000,1);
     aw(1000,0,1000,1000,1);
+    
+    // console wall
+    aw(0,691,1000,691,2);
 
     // manually typed walls from Illustrator
 
@@ -541,7 +549,6 @@ void setup(){
     aw(0,484,500,484,10);
     aw(240,555,600,555,10);
     aw(240,619,600,619,10);
-    aw(0,695,1000,695,10);
 
     // vertical walls
     aw(395,0,395,290,10);
@@ -552,7 +559,7 @@ void setup(){
     aw(596,624,596,624+66,10);
     aw(922,550,922,550+140,10);
     aw(495,290,495,290+110,10);
-    
+      
     addExit( 968, 640 );
 
     //TODO: Fix a bug where in processingJS, only one oof the bots work when they are pointed along parallel angles.
@@ -607,17 +614,44 @@ void setup(){
     gotoFirstLevel();
 }
 
+//TODO: make this more object-oriented and less spaghetti code
+// DisplayText at bottom of screen.
+String displayText = "";
+int lastMessage;
+PFont roboto;
+public void printMessage( String message ){
+    displayText = message;
+    lastMessage = millis();
+}
+void drawDisplayText(){
+    fill(255);
+    textFont(roboto);
+    text(displayText,10,700,600,390);
+
+    if (displayText != "")
+    {    
+      // Clear text if 3 seconds have passed since last message
+        if((millis() - lastMessage)/1000 > 3){ 
+        displayText = ""; 
+    }
+  }
+}
+
+boolean isPlaying;
 void draw(){  
-	background(0);
-    for(Wall wall : currentLevel.walls){
-        wall.draw();
+    if (isPlaying){
+        background(0);
+        for(Wall wall : currentLevel.walls){
+            wall.draw();
+        }
+        for(MapObject mapObject : currentLevel.mapObjects){
+        mapObject.draw();
+        }
+        currentLevel.pixel.draw(); // Draw last so it is on top of everything else
+        fill(0, 102, 153);
+        text(lastString,750,780,180);
+        drawDisplayText();
     }
-    for(MapObject mapObject : currentLevel.mapObjects){
-      mapObject.draw();
-    }
-    currentLevel.pixel.draw(); // Draw last so it is on top of everything else
-	fill(0, 102, 153);
-	text(lastString, 20,20);
 }
 
 void keyPressed(){
@@ -625,5 +659,5 @@ void keyPressed(){
 }
 
 void keyReleased(){
-	currentLevel.pixel.keyReleased();
+    currentLevel.pixel.keyReleased();
 }

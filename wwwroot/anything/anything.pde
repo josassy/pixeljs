@@ -4,7 +4,12 @@ void setup(){
 	fill(255);
 	frameRate(24);
 	textSize(32);
-	textFont("mono.ttf", 32);
+	//textFont("mono.ttf", 32);
+
+  String[] fonts = PFont.list();
+  for (String font : fonts){
+    println  (font);
+  }
 }
 
 int x = 0;

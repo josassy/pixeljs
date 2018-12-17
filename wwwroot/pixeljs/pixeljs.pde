@@ -364,10 +364,9 @@ class TriggerBot extends Bot{
 
     doMove();
 
-    //now actually draw the bot.
+    //now actually draw the bot. //<>//
     fill(211, 0, 24); // red
-    stroke(211, 0, 24);
-    strokeWeight( 1 );
+    noStroke();
     ellipse( (float)location.x, (float)location.y, (float)size.x, (float)size.y );
     Loc lineOtherEnd = lAng(size.x/2,angle).plus( location );
     stroke(255);
@@ -381,7 +380,7 @@ class TriggerBot extends Bot{
 class Pixel extends Movable{      
     
     public Pixel(){
-        this.size = l(25,25);
+        this.size = l(20,20);
     }
     void draw(){
         // Call inherited Movable method
@@ -402,8 +401,24 @@ class Pixel extends Movable{
         //}
         
         // Draw Pixel
+        
+        // Draw Pixel glow effect
+        stroke(255, 10); // 15% opacity
+        noFill();
+
+        // Draw transparent boxes with exponential distance from center
+        strokeWeight(4);
+        rect( (float)(location.x-size.x/2),(float)(location.y-size.y/2),(float)(size.x),(float)(size.y));
+        strokeWeight(9);
+        rect( (float)(location.x-size.x/2),(float)(location.y-size.y/2),(float)(size.x),(float)(size.y));
+        strokeWeight(16);
+        rect( (float)(location.x-size.x/2),(float)(location.y-size.y/2),(float)(size.x),(float)(size.y));
+        strokeWeight(25);
+        rect( (float)(location.x-size.x/2),(float)(location.y-size.y/2),(float)(size.x),(float)(size.y));
+                       
         stroke(255);
         fill(255);
+        noStroke();
         rect( (float)(location.x-size.x/2),(float)(location.y-size.y/2),(float)(size.x),(float)(size.y));
         
     }
@@ -454,7 +469,7 @@ void addPixel ( double x, double y ){
     pixel.setStartLocation(l(x,y));
     currentLevel.pixel = pixel;
 }
-
+ //<>//
 //TODO: make these use a Loc parameter
 void addExit( int x, int y ){
   Exit exit = new Exit();

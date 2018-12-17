@@ -2,7 +2,7 @@
 float FLOAT_MAX_VALUE = 3.4028234663852886E38;
 
 class Level{
-    Pixel pixel = new Pixel( l(0,0)); // This pixel is overwritten in initial map setup. 
+    Pixel pixel = new Pixel();
     ArrayList<Wall> walls = new ArrayList<Wall>();
     ArrayList<MapObject> mapObjects = new ArrayList<MapObject>();
     Level nextLevel = null;
@@ -255,9 +255,8 @@ class Gold extends MapObject{
 
 abstract class Movable extends MapObject{
     int speed = 10;
-    Loc velocity = l(0,0);
-    
-    Loc startLocation = l( 100, 100 );
+    Loc velocity = l(0,0); 
+    Loc startLocation = l( 0, 0 ); // Default value of 0,0. Set starting location using setStartLocation().
     
     void setStartLocation( Loc newStartLocation ){
       startLocation = newStartLocation;
@@ -288,7 +287,7 @@ abstract class Movable extends MapObject{
         */
        
         
-        //now deal with the thickness of the wall and moveable.
+        //now deal with the thickness of the wall and movable.
         final int numberOfIterations = 5;
         boolean didHit = true;
         for( int i = 0; i < numberOfIterations && didHit; ++i ){
@@ -378,8 +377,7 @@ class TriggerBot extends Bot{
 //int score = 0 // THIS IS SUPER BAD DON'T TRY THIS AT HOME
 class Pixel extends Movable{      
     
-    public Pixel( Loc location){
-        this.location = location;
+    public Pixel(){
         this.size = l(25,25);
     }
     void draw(){
@@ -448,8 +446,9 @@ void aw( int x1, int y1, int x2, int y2, int weight ){
     currentLevel.walls.add( new Wall(l(x1,y1),l(x2,y2), weight) );
 }
 
-void addPixel (Loc location){
-    Pixel pixel = new Pixel( location );
+void addPixel ( double x, double y ){
+    Pixel pixel = new Pixel();
+    pixel.setStartLocation(l(x,y));
     currentLevel.pixel = pixel;
 }
 
@@ -493,6 +492,7 @@ void gotoNextLevel(){
     currentLevel.reset();
   }else{
     //TODO: throw a party?
+    // maybe go to the main menu here?
   }
 }
 
@@ -574,8 +574,7 @@ void setup(){
     
     addExit( 200, 200 );
     
-    //TODO: Figure out why the pixel isn't being created where we want it.
-    addPixel( l( 0,0 ));
+    addPixel( 50, 45 );
     
     // LEVEL 2
 
@@ -605,6 +604,7 @@ void setup(){
     addGold( 315, 225 );
     addTriggerBot( 500, 300, 0 );
     addTriggerBot( 100, 50, 1.2 );
+    addPixel( 100, 100 );
     
     // LEVEL 3
 
@@ -617,6 +617,7 @@ void setup(){
     aw(156,411,57,510,4);
     
     addExit( 200, 300 );
+    addPixel( 100, 100 );
     
     gotoFirstLevel();
 }

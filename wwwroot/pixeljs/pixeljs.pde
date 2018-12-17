@@ -83,6 +83,7 @@ Loc l( double x, double y ){
     return new Loc( x, y );
 }
 
+// Convert polar coordinates to rectangular coordinates
 Loc lAng( double r, double ang ){
     return new Loc( r*Math.cos(ang), r*Math.sin(ang) );
 }
@@ -364,11 +365,13 @@ class TriggerBot extends Bot{
     doMove();
 
     //now actually draw the bot.
-    fill(255,214,19); //<>//
+    fill(211, 0, 24); // red
+    stroke(211, 0, 24);
     strokeWeight( 1 );
     ellipse( (float)location.x, (float)location.y, (float)size.x, (float)size.y );
-    Loc lineOtherEnd = lAng(size.x,angle).plus( location );
+    Loc lineOtherEnd = lAng(size.x/2,angle).plus( location );
     stroke(255);
+    strokeWeight( 2 );
     line( (float)location.x, (float)location.y, (float)lineOtherEnd.x, (float)lineOtherEnd.y );
     
   } 
@@ -463,7 +466,7 @@ void addExit( int x, int y ){
 void addGold( double x, double y ){
   Gold gold = new Gold();
   gold.location = l(x,y);
-  gold.size = l(5,5);
+  gold.size = l(10,10);
   currentLevel.mapObjects.add( gold );
 }
 
@@ -534,9 +537,10 @@ void setup(){
     aw(245,560,245,560+54,10);
     aw(596,624,596,624+66,10);
     aw(922,550,922,550+140,10);
+    aw(495,290,495,290+110,10);
 
     // diagonal walls
-    aw(488,291,513,395,10);
+    //aw(488,291,513,395,10);
 
     // manually tweaked walls
     // aw(394,0,394,294,10);

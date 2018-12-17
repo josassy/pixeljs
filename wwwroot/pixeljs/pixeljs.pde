@@ -364,7 +364,7 @@ class TriggerBot extends Bot{
 
     doMove();
 
-    //now actually draw the bot. //<>//
+    //now actually draw the bot. //<>// //<>//
     fill(211, 0, 24); // red
     noStroke();
     ellipse( (float)location.x, (float)location.y, (float)size.x, (float)size.y );
@@ -400,7 +400,6 @@ class Pixel extends Movable{
         //    lineLoc( location, closestPoint );
         //}
         
-        // Draw Pixel
         
         // Draw Pixel glow effect
         stroke(255, 10); // 15% opacity
@@ -416,6 +415,7 @@ class Pixel extends Movable{
         strokeWeight(25);
         rect( (float)(location.x-size.x/2),(float)(location.y-size.y/2),(float)(size.x),(float)(size.y));
                        
+        // Draw Pixel
         stroke(255);
         fill(255);
         noStroke();
@@ -468,7 +468,7 @@ void addPixel ( double x, double y ){
     Pixel pixel = new Pixel();
     pixel.setStartLocation(l(x,y));
     currentLevel.pixel = pixel;
-}
+} //<>//
  //<>//
 //TODO: make these use a Loc parameter
 void addExit( int x, int y ){
@@ -489,7 +489,6 @@ void addTriggerBot( double x, double y, double angle ){
   TriggerBot bot = new TriggerBot(); //<>//
   bot.setStartLocation( l(x,y) );
   bot.setStartAngle( angle );
-  //bot.size = l(10,10); // already set in constructor. Do we want to set it here instead?
   currentLevel.mapObjects.add( bot );
 }
 
@@ -553,46 +552,13 @@ void setup(){
     aw(596,624,596,624+66,10);
     aw(922,550,922,550+140,10);
     aw(495,290,495,290+110,10);
-
-    // diagonal walls
-    //aw(488,291,513,395,10);
-
-    // manually tweaked walls
-    // aw(394,0,394,294,10);
-    // aw(0,94,294,94,10);
-    // aw(594,96,594,555,10);
-    // aw(487,294,94,294,10);
-    // aw(487,294,513,394,10);
-    // aw(0,394,395,394,10);
-    // aw(0,483,495,483,10);
-    // aw(144,483,144,618,10);
-    // aw(245,554,245,619,10);
-    // aw(243,554,595,554,10);
-    // aw(921,554,921,694,10);
-    // aw(64,596,64,695,10);
-    // aw(244,617,594,617,10);
-    // aw(593,618,593,694,10);
-    // aw(0,694,993,694,10);
-
-    // original walls
-    // aw(394,5,395,294,10);
-    // aw(4,94,294,94,9);
-    // aw(594,96,594,555,9);
-    // aw(487,294,93,293,9);
-    // aw(486,294,513,394,11);
-    // aw(6,394,395,394,9);
-    // aw(6,483,495,484,9);
-    // aw(144,483,144,618,9);
-    // aw(245,554,244,619,9);
-    // aw(243,554,595,554,9);
-    // aw(921,554,922,694,9);
-    // aw(64,596,65,695,9);
-    // aw(244,617,594,619,9);
-    // aw(593,618,594,694,9);
-    // aw(5,694,993,694,10);
     
-    addExit( 200, 200 );
-    
+    addExit( 968, 640 );
+
+    //TODO: Fix a bug where in processingJS, only one oof the bots work when they are pointed along parallel angles.
+    addTriggerBot( 150, 130, radians(90) );
+    addTriggerBot( 250, 130, radians(89.9) ); 
+    addTriggerBot( 200, 260, radians(269.9) );
     addPixel( 50, 45 );
     
     // LEVEL 2
@@ -661,5 +627,3 @@ void keyPressed(){
 void keyReleased(){
 	currentLevel.pixel.keyReleased();
 }
-
-//Currently working on TriggerBot.  It needs to figure out its trigger line and make itself go.

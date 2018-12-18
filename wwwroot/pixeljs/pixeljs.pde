@@ -10,6 +10,7 @@ class Level{
     public void reset(){
         pixel.reset();
         for( MapObject mapObject : mapObjects )mapObject.reset();
+        displayBox.reset();
         isPlaying = true;
     }
     
@@ -211,7 +212,8 @@ abstract class MapObject{
     Loc size = l( 10, 10 );
     abstract public void activate();
 
-    abstract public void reset();
+    public void reset(){
+    }
     
     void bumpCheck( MapObject other ){
         if( other.location.distanceTo( this.location ) < (other.size.x+this.size.x)/2 ){
@@ -231,7 +233,7 @@ class Exit extends MapObject{
         ellipse( (float)location.x, (float)location.y, (float)size.x, (float)size.y );
     }
     public void activate(){
-        printMessage("Congrats, you found the exit!")
+        displayBox.addMessage("Congrats, you found the exit!");
         gotoNextLevel();
     }
 }
@@ -249,7 +251,7 @@ class Gold extends MapObject{
     }
     public void activate(){
         //score++;
-        printMessage("You hit Gold! Time +1")
+        displayBox.addMessage("You hit Gold! Time +1");
         isVisible = false;
     }  
     public void reset(){
@@ -328,7 +330,7 @@ abstract class Bot extends Movable{
         startAngle = newAngle;
     }
     void activate(){
-        printMessage("You got hit by a Bot! Press 'r' to restart or ESC to exit.")
+        displayBox.addMessage("You got hit by a Bot! Press 'r' to restart or ESC to exit.");
         currentLevel.crash();
     }
     void reset(){
@@ -364,12 +366,12 @@ class TriggerBot extends Bot{
         if( triggerLine.intersectionWith(pixelStep) != null ){
             //Charge!!
             this.velocity = lAng( speed, angle );
-            printMessage("The bot sees you!");
+            displayBox.addMessage("The bot sees you!");
         }
 
         doMove();
 
-        //now actually draw the bot. //<>// //<>//
+        //now actually draw the bot. //<>// //<>// //<>//
         fill(211, 0, 24); // red
         noStroke();
         ellipse( (float)location.x, (float)location.y, (float)size.x, (float)size.y );
@@ -489,7 +491,7 @@ void addGold( double x, double y ){
 }
 
 void addTriggerBot( double x, double y, double angle ){
-    TriggerBot bot = new TriggerBot(); //<>//
+    TriggerBot bot = new TriggerBot(); //<>// //<>//
     bot.setStartLocation( l(x,y) );
     bot.setStartAngle( angle );
     currentLevel.mapObjects.add( bot );
@@ -526,8 +528,8 @@ void setup(){
       frameRate(24);
       textSize(32);
 
-    // Add fonts
-    roboto = createFont("Roboto",20);
+    // Initialize DisplayBox with font of choice
+    displayBox = new DisplayBox( createFont("Roboto", 20 ));
 
     // LEVEL 1
 
@@ -614,30 +616,62 @@ void setup(){
     gotoFirstLevel();
 }
 
-//TODO: make this more object-oriented and less spaghetti code
 // DisplayText at bottom of screen.
-String displayText = "";
-int lastMessage;
-PFont roboto;
-public void printMessage( String message ){
-    displayText = message;
-    lastMessage = millis();
-}
-void drawDisplayText(){
-    fill(255);
-    textFont(roboto);
-    text(displayText,10,700,600,390);
+public class DisplayBox{
+    String displayText = "";
+    PFont font;
+    ArrayList<DisplayMessage> messages = new ArrayList<DisplayMessage>();
 
-    if (displayText != "")
-    {    
-      // Clear text if 3 seconds have passed since last message
-        if((millis() - lastMessage)/1000 > 3){ 
-        displayText = ""; 
+    public DisplayBox(PFont font){
+        this.font = font;
     }
-  }
+
+    public void addMessage( String message ){
+        // If list is too long, remove oldest message from list
+        if (messages.size()>=3) {
+            messages.remove(0);
+        }
+        messages.add(new DisplayMessage(message));
+    }
+    void draw(){
+        fill(255);
+        textFont(font);
+
+        String displayText = "";
+        for (DisplayMessage message : new ArrayList<DisplayMessage>(messages)){
+            // Iterate through copy of messages
+            if((millis() - message.arrivalTime)/1000 < 3){ 
+                displayText = message.ToString() + "\n" + displayText;
+                println(displayText);
+            }else{
+                // If messsage is old, remove from list
+                messages.remove(message);
+            }
+        }
+        text(displayText,10,700,600,390);
+    }
+    void reset(){
+        messages.clear();
+    }
+}
+
+// Represents message in displayBox, stores time it was posted.
+public class DisplayMessage{
+    String message;
+    int arrivalTime;
+
+    public DisplayMessage( String message ){
+        this.message = message;
+        this.arrivalTime = millis();
+    }
+    
+    public String ToString(){
+        return message;
+    }
 }
 
 boolean isPlaying;
+DisplayBox displayBox;
 void draw(){  
     if (isPlaying){
         background(0);
@@ -650,7 +684,7 @@ void draw(){
         currentLevel.pixel.draw(); // Draw last so it is on top of everything else
         fill(0, 102, 153);
         text(lastString,750,780,180);
-        drawDisplayText();
+        displayBox.draw();
     }
 }
 

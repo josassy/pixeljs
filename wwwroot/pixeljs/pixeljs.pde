@@ -103,6 +103,14 @@ class Line{
       a = newA; b = newB;
     }
 
+    public String toString(){
+      return "" + a + "->" + b;
+    }
+
+    public boolean isMoreVertical(){
+      return Math.abs(this.a.y-this.b.y) > Math.abs(this.a.x-this.b.x); 
+    }
+
     Loc aToB(){
         return b.minus(a);
     }
@@ -130,8 +138,8 @@ class Line{
         
         //Check if the point is off this line
         
-        //If this is vertical check along y
-        if( this.a.x == this.b.x ){
+        //If this is more vertical check along y
+        if( this.isMoreVertical() ){
             if( intersection.y < Math.min( this.a.y, this.b.y ) ) return null;
             if( intersection.y > Math.max( this.a.y, this.b.y ) ) return null;
         }else{
@@ -142,8 +150,8 @@ class Line{
         
         //or the other.
         
-        //If other is vertical check along y
-        if( other.a.x == other.b.x ){
+        //If other is more vertical check along y
+        if( other.isMoreVertical() ){
             if( intersection.y < Math.min( other.a.y, other.b.y ) ) return null;
             if( intersection.y > Math.max( other.a.y, other.b.y ) ) return null;
         }else{
@@ -155,30 +163,30 @@ class Line{
         //if the point isn't off this line or the other then it is a valid
         //intersection
         return intersection;
-        }
+    }
 
-        // https://www.geeksforgeeks.org/program-for-point-of-intersection-of-two-lines/
-        Loc infiniteIntersectionWith( Line other ){
-            // Line AB represented as a1x + b1y = c1
-            double a1 = this.b.y - this.a.y;
-            double b1 = this.a.x - this.b.x;
-            double c1 = a1*(this.a.x) + b1*(this.a.y);
-        
-            // Line CD represented as a2x + b2y = c2
-            double a2 = other.b.y - other.a.y;
-            double b2 = other.a.x - other.b.x;
-            double c2 = a2*(other.a.x)+ b2*(other.a.y);
-        
-            double determinant = a1*b2 - a2*b1;
-        
-            if (determinant == 0){
-                // The lines are parallel. This is simplified
-                // by returning a pair of FLT_MAX
-                return new Loc(FLOAT_MAX_VALUE, FLOAT_MAX_VALUE);
-            }else{
-                double x = (b2*c1 - b1*c2)/determinant;
-                double y = (a1*c2 - a2*c1)/determinant;
-                return new Loc(x, y);
+    // https://www.geeksforgeeks.org/program-for-point-of-intersection-of-two-lines/
+    Loc infiniteIntersectionWith( Line other ){
+        // Line AB represented as a1x + b1y = c1
+        double a1 = this.b.y - this.a.y;
+        double b1 = this.a.x - this.b.x;
+        double c1 = a1*(this.a.x) + b1*(this.a.y);
+
+        // Line CD represented as a2x + b2y = c2
+        double a2 = other.b.y - other.a.y;
+        double b2 = other.a.x - other.b.x;
+        double c2 = a2*(other.a.x)+ b2*(other.a.y);
+
+        double determinant = a1*b2 - a2*b1;
+
+        if (determinant == 0){
+            // The lines are parallel. This is simplified
+            // by returning a pair of FLT_MAX
+            return new Loc(FLOAT_MAX_VALUE, FLOAT_MAX_VALUE);
+        }else{
+            double x = (b2*c1 - b1*c2)/determinant;
+            double y = (a1*c2 - a2*c1)/determinant;
+            return new Loc(x, y);
         }
     }
     
@@ -250,7 +258,7 @@ class Gold extends MapObject{
         }
     }
     public void activate(){
-        //score++;
+        //TODO: score++;
         displayBox.addMessage("You hit Gold! Time +1");
         isVisible = false;
     }  
@@ -565,9 +573,10 @@ void setup(){
     addExit( 968, 640 );
 
     //TODO: Fix a bug where in processingJS, only one oof the bots work when they are pointed along parallel angles.
+
     addTriggerBot( 150, 130, radians(90) );
-    addTriggerBot( 250, 130, radians(89.9) ); 
-    addTriggerBot( 200, 260, radians(269.9) );
+    addTriggerBot( 250, 130, radians(90) );
+    addTriggerBot( 200, 260, radians(270) );
     addPixel( 50, 45 );
     
     // LEVEL 2

@@ -329,8 +329,8 @@ abstract class Movable extends MapObject{
 abstract class Bot extends Movable{
     double startAngle = 0;
     double angle = 0;
-    double speed = 12;
     public Bot(){
+        this.speed = 12;
         this.size = l(25,25);
     }
     void setStartAngle( double newAngle ){
@@ -388,6 +388,48 @@ class TriggerBot extends Bot{
         strokeWeight( 2 );
         line( (float)location.x, (float)location.y, (float)lineOtherEnd.x, (float)lineOtherEnd.y );        
     } 
+}
+
+class PathBot extends Bot{
+  ArrayList< Loc > path = new ArrayList< Loc >();
+  boolean forward = true;
+  int index = 1;
+  void draw(){
+    if( path.size() > 0 ){
+      Loc waypoint = this.path.get(this.index);
+      //check if we are close enough to our target to turn to the next waypoint.
+      while( this.location.distanceTo( waypoint ) < this.speed ){
+        if( index == path.size()-1 ) forward = false; //<>//
+        if( index == 0 ) forward = true;
+        if( forward ){
+          index++;
+        }else{
+          index--;
+        }
+        waypoint = this.path.get(this.index);
+      }
+      doMove();
+      
+      //point our robot at the next location
+      this.angle = this.location.angleTo( waypoint );
+      this.velocity = lAng( this.speed, this.angle );
+    }
+    
+    
+    //now actually draw the bot. //<>// //<>//
+    fill(0, 211, 24); // green?  Josiah, change this how you like it.
+    noStroke();
+    ellipse( (float)location.x, (float)location.y, (float)size.x, (float)size.y );
+    Loc lineOtherEnd = lAng(size.x/2,angle).plus( location );
+    stroke(255);
+    strokeWeight( 2 );
+    line( (float)location.x, (float)location.y, (float)lineOtherEnd.x, (float)lineOtherEnd.y );     
+  }
+  void reset(){
+    super.reset();
+    index = 1;
+    forward = true;
+  }
 }
 
 //int score = 0 // THIS IS SUPER BAD DON'T TRY THIS AT HOME
@@ -477,10 +519,13 @@ void aw( int x1, int y1, int x2, int y2, int weight ){
     currentLevel.walls.add( new Wall(l(x1,y1),l(x2,y2), weight) );
 }
 
+Movable lastMovable = null;
+
 void addPixel ( double x, double y ){
     Pixel pixel = new Pixel();
     pixel.setStartLocation(l(x,y));
     currentLevel.pixel = pixel;
+    lastMovable = pixel;
 }
 
 //TODO: make these use a Loc parameter
@@ -499,10 +544,28 @@ void addGold( double x, double y ){
 }
 
 void addTriggerBot( double x, double y, double angle ){
-    TriggerBot bot = new TriggerBot(); //<>// //<>//
+    TriggerBot bot = new TriggerBot(); //<>//
     bot.setStartLocation( l(x,y) );
     bot.setStartAngle( angle );
     currentLevel.mapObjects.add( bot );
+    lastMovable = bot;
+}
+
+PathBot lastPathBot = null;
+void addPathBot( double x, double y ){
+  PathBot bot = new PathBot();
+  bot.setStartLocation( l(x,y) );
+  currentLevel.mapObjects.add( bot );
+  lastPathBot = bot;
+  lastMovable = bot;
+}
+
+void addPathBotWayPoint( double x, double y ){
+  if( lastPathBot != null ) lastPathBot.path.add( l(x,y) );
+}
+
+void setSpeed( int speed ){
+  if( lastMovable != null ) lastMovable.speed = speed;
 }
 
 void gotoFirstLevel(){
@@ -572,12 +635,24 @@ void setup(){
       
     addExit( 968, 640 );
 
-    //TODO: Fix a bug where in processingJS, only one oof the bots work when they are pointed along parallel angles.
-
     addTriggerBot( 150, 130, radians(90) );
     addTriggerBot( 250, 130, radians(90) );
     addTriggerBot( 200, 260, radians(270) );
     addPixel( 50, 45 );
+    
+    addPathBot( 43, 443 );
+    addPathBotWayPoint( 43, 443 );
+    addPathBotWayPoint( 545, 439 );
+    addPathBotWayPoint( 549, 41 );
+    addPathBotWayPoint( 639, 43 );
+    addPathBotWayPoint( 438, 39 );
+    setSpeed( 10 );
+    
+    addPathBot( 40, 131 );
+    addPathBotWayPoint( 40, 131 );
+    addPathBotWayPoint( 40, 345 );
+    addPathBotWayPoint( 444, 345 );
+    setSpeed( 3 );
     
     // LEVEL 2
 

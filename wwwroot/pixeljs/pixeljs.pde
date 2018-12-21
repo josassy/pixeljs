@@ -1,6 +1,9 @@
 //processing.js doesn't like Double.MAX_VALUE
 float FLOAT_MAX_VALUE = 3.4028234663852886E38;
 
+boolean levelEditMode = false;
+EditableThing selectedThing = null;
+
 class Level{
     Pixel pixel = new Pixel();
     ArrayList<Wall> walls = new ArrayList<Wall>();
@@ -17,8 +20,16 @@ class Level{
     public void crash(){
         isPlaying = false;
     }
-}
+    
+    public String mapConstruct(){
+       String result = "";
+       result += pixel.mapConstruct();
+       for( Wall wall : walls ) result += wall.mapConstruct();
+       for( MapObject mapObject : mapObjects ) result += mapObject.mapConstruct();
+       return result;
+    }
 
+}
 Level currentLevel = new Level();
 
 Level firstLevel = currentLevel;
@@ -196,7 +207,13 @@ class Line{
     }
 }
 
-class Wall extends Line{
+interface EditableThing{
+  void delete();
+  void trySelect( Loc loc );
+  void edit_copy();
+}
+
+class Wall extends Line implements EditableThing{
 
     int weight = 5;
 
@@ -206,21 +223,80 @@ class Wall extends Line{
     }
 
     void draw(){
-        stroke(255);
+        if( levelEditMode && selectedThing == this ){
+          stroke(100);
+          
+          if( mousePressed ){
+            Loc pmouse = l(pmouseX,pmouseY);
+            Loc mouse = l(mouseX,mouseY);
+            Loc moveAmount = mouse.minus(pmouse);
+            if( pmouse.distanceTo( a ) < weight*.6 ){
+              a = a.plus(moveAmount);;
+            }else if( pmouse.distanceTo( b ) < weight*.6 ){
+              b = b.plus(moveAmount);
+            }else{
+              Loc bestHit = this.closestLocTo( pmouse );
+              if( bestHit.distanceTo( pmouse ) < weight*.6 ){
+                a = a.plus(moveAmount);
+                b = b.plus(moveAmount);
+              }
+            }
+          }
+        }else{
+          stroke(255);
+        }
         strokeCap(SQUARE);
         strokeWeight(weight);
         lineLoc(a,b);
     }
+    
+    void delete(){
+      currentLevel.walls.remove(this);
+    }
+    void edit_copy(){
+      Loc middle = a.plus(b).times(.5);
+      Loc mouse = l(mouseX,mouseY);
+      Loc middleToMouse = mouse.minus(middle);
+      Wall newWall = new Wall( a.plus(middleToMouse), b.plus(middleToMouse), weight );
+      currentLevel.walls.add(newWall);
+    }
+    
+    void trySelect( Loc loc ){
+      Loc bestHit = this.closestLocTo( loc );
+      if( bestHit.distanceTo( loc ) < weight*.6 ) selectedThing = this;
+    }
+    
+    String mapConstruct(){
+      return "aw( " + (int)a.x + "," + (int)a.y + "," + (int)b.x + "," + (int)b.y + "," + (int)weight + " );\n";
+    }
 }
 
-abstract class MapObject{
+abstract class MapObject implements EditableThing{
     Loc location = l( 100, 100 );
 
-    abstract public void draw();
+    public void draw(){
+      if( levelEditMode ){
+        if( selectedThing == this ){
+          stroke( 230 );
+          strokeWeight( 10 );
+          ellipse( (float)location.x, (float)location.y, (float)size.x*2, (float)size.y*2 );
+          
+          //implement drag
+          if( mousePressed && contains( l( pmouseX, pmouseY ) ) ){
+            location.x += mouseX-pmouseX;
+            location.y += mouseY-pmouseY;
+            setStartLocation( location );
+          }
+        }
+      }
+    }
     Loc size = l( 10, 10 );
     abstract public void activate();
 
-    public void reset(){
+    public void reset(){}
+   
+    public void setStartLocation( Loc loc ){
+      location = loc.copy();
     }
     
     void bumpCheck( MapObject other ){
@@ -229,13 +305,49 @@ abstract class MapObject{
         }
     }
     
+    public void delete(){
+      currentLevel.mapObjects.remove(this);
+    }
+    
+    boolean contains( Loc loc ){
+      if( loc.x < location.x-size.x*.5 ) return false;
+      if( loc.x > location.x+size.x*.5 ) return false;
+      if( loc.y < location.y-size.y*.5 ) return false;
+      if( loc.y > location.y+size.y*.5 ) return false;
+      return true;
+    }
+    void trySelect( Loc loc ){
+      if( contains( loc ) ) selectedThing = this;
+    }
+    
+    void edit_copy(){
+      MapObject newCopy = copy();
+      newCopy.setStartLocation( l(mouseX,mouseY) );
+      newCopy.size = this.size.copy();
+      currentLevel.mapObjects.add( newCopy );
+    }
+    
+    abstract MapObject construct_new();
+ 
+    MapObject copy(){
+      MapObject n = construct_new();
+      n.size = this.size.copy();
+      n.location = this.location.copy();
+      return n;
+    }
+    
+    abstract String functionName();
+    String mapConstruct(){ return functionName() + "(" + (int)location.x + "," + (int)location.y + ");\n"; }
 }
 
 class Exit extends MapObject{
-
-    Loc size = l( 25, 25 );
+  
+    public Exit(){
+      size = l( 25, 25 );
+    }
 
     public void draw(){
+        super.draw();
         fill(00,0,000);
         strokeWeight( 1 );
         ellipse( (float)location.x, (float)location.y, (float)size.x, (float)size.y );
@@ -244,6 +356,8 @@ class Exit extends MapObject{
         displayBox.addMessage("Congrats, you found the exit!");
         gotoNextLevel();
     }
+    public MapObject construct_new() { return new Exit(); }
+    public String functionName(){ return "addExit"; }
 }
 
 
@@ -251,10 +365,11 @@ class Gold extends MapObject{
     boolean isVisible = true;
     
     public void draw(){
+        super.draw();
         if (isVisible){     
         fill(255,214,19);
         strokeWeight( 1 );
-        rect( (float)location.x, (float)location.y, (float)size.x, (float)size.y );
+        rect( (float)(location.x-size.x*.5), (float)(location.y-size.y*.5), (float)size.x, (float)size.y );
         }
     }
     public void activate(){
@@ -266,6 +381,9 @@ class Gold extends MapObject{
         super.reset();
         isVisible = true;
     }
+    
+    public MapObject construct_new() { return new Gold(); }
+    public String functionName(){ return "addGold"; }
 }
 
 abstract class Movable extends MapObject{
@@ -284,45 +402,47 @@ abstract class Movable extends MapObject{
     }
     
     void doMove(){
-     
-        Loc newLocation = location.plus(velocity);
-        
-        
-        /*
-        //first make sure we don't actually cross any lines.
-        Line step = new Line( location, newLocation );
-        for( Wall wall : walls ){
-          Loc intersection = step.intersectionWith(wall);
-          if( intersection != null ){
-            //be a bit back so we aren't sitting right on the wall
-            newLocation = intersection.plus(location.minus(intersection).unitLength().times(2));
-            step = new Line( location, newLocation );
-          }
-        }
-        */
-       
-        
-        //now deal with the thickness of the wall and movable.
-        final int numberOfIterations = 5;
-        boolean didHit = true;
-        for( int i = 0; i < numberOfIterations && didHit; ++i ){
-            didHit = false;
-            for( Wall wall : currentLevel.walls ){
-                Loc closestPoint = wall.closestLocTo( newLocation );
-                
-                double dist = newLocation.distanceTo(closestPoint);
-                
-                //do we bump into this wall?
-                double overlap = .5*(size.x+wall.weight)-dist;
-                if( overlap > 0 ){
-                    //move back till we are not bumping.  
-                    newLocation = newLocation.plus( location.minus(closestPoint).unitLength().times(overlap) );
-                    didHit = true;
-                }
+    
+      if( !levelEditMode ){
+          Loc newLocation = location.plus(velocity);
+          
+          
+          /*
+          //first make sure we don't actually cross any lines.
+          Line step = new Line( location, newLocation );
+          for( Wall wall : walls ){
+            Loc intersection = step.intersectionWith(wall);
+            if( intersection != null ){
+              //be a bit back so we aren't sitting right on the wall
+              newLocation = intersection.plus(location.minus(intersection).unitLength().times(2));
+              step = new Line( location, newLocation );
             }
-        }
-        
-        location = newLocation;
+          }
+          */
+         
+          
+          //now deal with the thickness of the wall and movable.
+          final int numberOfIterations = 5;
+          boolean didHit = true;
+          for( int i = 0; i < numberOfIterations && didHit; ++i ){
+              didHit = false;
+              for( Wall wall : currentLevel.walls ){
+                  Loc closestPoint = wall.closestLocTo( newLocation );
+                  
+                  double dist = newLocation.distanceTo(closestPoint);
+                  
+                  //do we bump into this wall?
+                  double overlap = .5*(size.x+wall.weight)-dist;
+                  if( overlap > 0 ){
+                      //move back till we are not bumping.  
+                      newLocation = newLocation.plus( location.minus(closestPoint).unitLength().times(overlap) );
+                      didHit = true;
+                  }
+              }
+          }
+          
+          location = newLocation;
+      }
     }
 }
 
@@ -345,10 +465,12 @@ abstract class Bot extends Movable{
         super.reset();
         angle = startAngle;
     }
+    String mapConstruct(){ return super.mapConstruct() + "setSpeed( " + speed + ");\n"; }
 }
 
 class TriggerBot extends Bot{
-    void draw(){       
+    void draw(){
+        super.draw();
         //Figure out our trigger line.
         //It extends in the direction we are pointing to
         //the nearest wall or 800.
@@ -388,6 +510,10 @@ class TriggerBot extends Bot{
         strokeWeight( 2 );
         line( (float)location.x, (float)location.y, (float)lineOtherEnd.x, (float)lineOtherEnd.y );        
     } 
+    
+    public MapObject construct_new() { return new TriggerBot(); }
+    public String functionName(){ return "addTriggerBot"; }
+    String mapConstruct(){ return functionName() + "(" + (int)location.x + "," + (int)location.y + "," + angle + ");\nsetSpeed( " + speed + ");\n"; }
 }
 
 class PathBot extends Bot{
@@ -395,6 +521,7 @@ class PathBot extends Bot{
   boolean forward = true;
   int index = 1;
   void draw(){
+    super.draw();
     if( path.size() > 0 ){
       Loc waypoint = this.path.get(this.index);
       //check if we are close enough to our target to turn to the next waypoint.
@@ -430,6 +557,15 @@ class PathBot extends Bot{
     index = 1;
     forward = true;
   }
+  public MapObject construct_new() { return new PathBot(); }
+  
+  public String functionName(){ return "addPathBot"; }
+    
+  String mapConstruct(){
+    String result = super.mapConstruct();
+    for( Loc waypoint : path ) result += "addPathBotWayPoint(" + (int)waypoint.x + "," + (int)waypoint.y + ");\n";
+     return result; 
+  }
 }
 
 //int score = 0 // THIS IS SUPER BAD DON'T TRY THIS AT HOME
@@ -439,6 +575,7 @@ class Pixel extends Movable{
         this.size = l(20,20);
     }
     void draw(){
+      super.draw();
         // Call inherited Movable method
         doMove();
         
@@ -492,6 +629,29 @@ class Pixel extends Movable{
             gotoFirstLevel();
         }else if(keyCode == 'L' ){
             currentLevel.reset();
+        }else if(keyCode == 'E' ){
+            levelEditMode = !levelEditMode;
+        }else if(keyCode == ESC && levelEditMode){
+            selectedThing = null;
+        }else if(keyCode == DELETE && levelEditMode ){
+            if(selectedThing != null){
+               selectedThing.delete();
+               //Don't null selectedThing because it can still be copied.
+            }
+        }else if(keyCode == 'C' && levelEditMode ){
+            if(selectedThing != null)selectedThing.edit_copy();
+        }else if(keyCode == 'P' && levelEditMode ){
+            println( globalMapConstruct() );
+        }else if(keyCode == 33 && levelEditMode ){ //PAGE UP
+            Level level = firstLevel;
+            while( level != null && level.nextLevel != currentLevel ) level = level.nextLevel;
+            currentLevel = level;
+        }else if(keyCode == 34 && levelEditMode ){ //PAGE DOWN
+          if( currentLevel.nextLevel != null ){
+            gotoNextLevel();
+          }else{
+            makeNextLevel();
+          }
         }else{
             lastString = "keyPress " + keyCode;
         }
@@ -509,6 +669,12 @@ class Pixel extends Movable{
     void activate(){
       //do nothing.
     }
+    public MapObject construct_new() { return new Pixel(); }
+    void edit_copy(){
+      //do nothing. 
+    }
+    
+    public String functionName(){ return "addPixel"; }
 }
 
 String lastString = "";
@@ -589,6 +755,22 @@ void gotoNextLevel(){
     }
 }
 
+String globalMapConstruct(){
+  String result = "";
+  Level level = firstLevel;
+  int levelNumber = 1;
+  while( level != null ){
+    result += "//LEVEL " + levelNumber++ + "\n";
+    if( level != firstLevel ) result += "makeNextLevel();\n";
+    result += level.mapConstruct();
+    level = level.nextLevel;
+    if( level != null ) result += "\n\n";
+  }
+  result += "gotoFirstLevel();\n";
+  return result;
+}
+
+
 void setup(){
 
     // INITIAL SETUP
@@ -601,6 +783,8 @@ void setup(){
 
     // Initialize DisplayBox with font of choice
     displayBox = new DisplayBox( createFont("Roboto", 20 ));
+    
+    //INSERT vvvv
 
     // LEVEL 1
 
@@ -698,6 +882,7 @@ void setup(){
     addPixel( 100, 100 );
     
     gotoFirstLevel();
+    //INSERT ^^^^
 }
 
 // DisplayText at bottom of screen.
@@ -771,6 +956,15 @@ void draw(){
         displayBox.draw();
     }
 }
+
+void mousePressed(){
+  Loc mousePos = l( mouseX, mouseY );
+  for( MapObject mapObject : currentLevel.mapObjects ) mapObject.trySelect( mousePos ); 
+  for( Wall wall : currentLevel.walls ) wall.trySelect( mousePos );
+  currentLevel.pixel.trySelect( mousePos );
+}
+
+
 
 void keyPressed(){
     currentLevel.pixel.keyPressed();

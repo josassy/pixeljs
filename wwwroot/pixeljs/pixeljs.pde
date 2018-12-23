@@ -13,6 +13,7 @@ class Level{
     public void reset(){
         pixel.reset();
         for( MapObject mapObject : mapObjects )mapObject.reset();
+        for( Wall wall : walls ) wall.reset();
         displayBox.reset();
         isPlaying = true;
     }
@@ -266,9 +267,64 @@ class Wall extends Line implements EditableThing{
       if( bestHit.distanceTo( loc ) < weight*.6 ) selectedThing = this;
     }
     
+    void reset(){}
+    
     String mapConstruct(){
       return "aw( " + (int)a.x + "," + (int)a.y + "," + (int)b.x + "," + (int)b.y + "," + (int)weight + " );\n";
     }
+}
+
+class Door extends Wall{
+  Loc startingB = l(0,0);
+  
+  boolean opening = false;
+  double openSpeed = 3;
+  Switch switch_ = null;
+  
+  public Door( Loc a, Loc b, int weight ){
+    super(a,b,weight);
+    startingB = b.copy();
+  }
+  
+  void draw(){
+    if( opening ){
+      double length = b.distanceTo(a);
+      if( length > openSpeed ){
+        b = a.minus(b).unitLength().times(openSpeed).plus(b);
+      }else if( length > 0 ){
+        b = a.copy();
+      }else{
+        opening = false;
+      }
+    }
+    super.draw();
+  }
+ 
+  void reset(){
+    b = startingB.copy();
+    opening = false;
+  } 
+  
+  void delete(){
+    super.delete();
+    if( switch_ != null ) switch_.doors.remove(this);
+  }
+  
+  String mapConstruct(){
+    //Let the switches print our add command if we are connected so that the commands come in the right order.
+    if(switch_ == null) return "addDoor( " + (int)a.x + "," + (int)a.y + "," + (int)startingB.x + "," + (int)startingB.y + "," + (int)weight + " );\n";
+    return "";
+  }
+  
+  void edit_copy(){
+      Loc middle = a.plus(startingB).times(.5);
+      Loc mouse = l(mouseX,mouseY);
+      Loc middleToMouse = mouse.minus(middle);
+      Loc newA = a.plus(middleToMouse);
+      Loc newStartingB = startingB.plus(middleToMouse);
+      //AddDoor takes care of connecting the new switch.
+      addDoor( (int)newA.x, (int)newA.y, (int)newStartingB.x, (int)newStartingB.y, (int)weight );
+   }
 }
 
 abstract class MapObject implements EditableThing{
@@ -348,7 +404,7 @@ class Exit extends MapObject{
 
     public void draw(){
         super.draw();
-        fill(00,0,000);
+        fill(0,0,0);
         strokeWeight( 1 );
         ellipse( (float)location.x, (float)location.y, (float)size.x, (float)size.y );
     }
@@ -359,6 +415,41 @@ class Exit extends MapObject{
     public MapObject construct_new() { return new Exit(); }
     public String functionName(){ return "addExit"; }
 }
+
+
+Switch lastSwitch = null;
+class Switch extends MapObject{
+  ArrayList<Door> doors = new ArrayList<Door>();
+  
+  public Switch(){
+    size = l( 25,25 );
+    lastSwitch = this;
+  }
+  
+  public void draw(){
+    super.draw();
+    strokeWeight( 1 );
+    rect( (float)(location.x-size.x*.5), (float)(location.y-size.y*.5), (float)size.x, (float)size.y );
+  }
+  
+  public void activate(){
+    displayBox.addMessage( "Congrats, you found a switch!");
+    for( Door door : doors )door.opening = true;
+  }
+  
+  public MapObject construct_new(){ return new Switch(); }
+  public String functionName(){ return "addSwitch"; }
+  
+  public String mapConstruct(){
+    String result = super.mapConstruct();
+    for( Door door: doors ){
+      result += "addDoor(" + (int)door.a.x + "," + (int)door.a.y + "," + (int)door.startingB.x + "," + (int)door.startingB.y + "," + (int)door.weight + ");\n"; 
+      
+    }
+    return result;
+  }
+}
+    
 
 
 class Gold extends MapObject{
@@ -386,10 +477,15 @@ class Gold extends MapObject{
     public String functionName(){ return "addGold"; }
 }
 
+Movable lastMovable = null;
 abstract class Movable extends MapObject{
     int speed = 10;
     Loc velocity = l(0,0); 
     Loc startLocation = l( 0, 0 ); // Default value of 0,0. Set starting location using setStartLocation().
+    
+    public Movable(){
+      lastMovable = this;
+    }
     
     void setStartLocation( Loc newStartLocation ){
         startLocation = newStartLocation;
@@ -465,7 +561,7 @@ abstract class Bot extends Movable{
         super.reset();
         angle = startAngle;
     }
-    String mapConstruct(){ return super.mapConstruct() + "setSpeed( " + speed + ");\n"; }
+    String mapConstruct(){ return super.mapConstruct() + "setSpeed( " + speed + " );\n"; }
 }
 
 class TriggerBot extends Bot{
@@ -516,10 +612,14 @@ class TriggerBot extends Bot{
     String mapConstruct(){ return functionName() + "(" + (int)location.x + "," + (int)location.y + "," + angle + ");\nsetSpeed( " + speed + ");\n"; }
 }
 
+PathBot lastPathBot = null;
 class PathBot extends Bot{
   ArrayList< Loc > path = new ArrayList< Loc >();
   boolean forward = true;
   int index = 1;
+  public PathBot(){
+    lastPathBot = this;
+  }
   void draw(){
     super.draw();
     if( path.size() > 0 ){
@@ -579,7 +679,7 @@ class Pixel extends Movable{
         // Call inherited Movable method
         doMove();
         
-        for( MapObject mapObject: currentLevel.mapObjects ) mapObject.bumpCheck( this );
+        if( !levelEditMode )for( MapObject mapObject: currentLevel.mapObjects ) mapObject.bumpCheck( this );
         
         // Draw the score!
         //TODO: draw score in the corner :)
@@ -685,20 +785,35 @@ void aw( int x1, int y1, int x2, int y2, int weight ){
     currentLevel.walls.add( new Wall(l(x1,y1),l(x2,y2), weight) );
 }
 
-Movable lastMovable = null;
+//A door is controlled by the switch most recently created.
+void addDoor( int x1, int y1, int x2, int y2, int weight ){
+  Door newDoor = new Door(l(x1,y1),l(x2,y2), weight);
+  currentLevel.walls.add( newDoor );
+  if( lastSwitch != null ){
+    lastSwitch.doors.add(newDoor);
+    newDoor.switch_ = lastSwitch;
+  }
+}
+
+void addSwitch( int x, int y ){
+  Switch newSwitch = new Switch();
+  lastSwitch.location = l(x,y);
+  currentLevel.mapObjects.add( newSwitch );
+}
+  
+
+
 
 void addPixel ( double x, double y ){
     Pixel pixel = new Pixel();
     pixel.setStartLocation(l(x,y));
     currentLevel.pixel = pixel;
-    lastMovable = pixel;
 }
 
 //TODO: make these use a Loc parameter
 void addExit( int x, int y ){
     Exit exit = new Exit();
     exit.location = l(x,y);
-    exit.size = l(20,20);
     currentLevel.mapObjects.add( exit );
 }
 
@@ -714,16 +829,12 @@ void addTriggerBot( double x, double y, double angle ){
     bot.setStartLocation( l(x,y) );
     bot.setStartAngle( angle );
     currentLevel.mapObjects.add( bot );
-    lastMovable = bot;
 }
 
-PathBot lastPathBot = null;
 void addPathBot( double x, double y ){
   PathBot bot = new PathBot();
   bot.setStartLocation( l(x,y) );
   currentLevel.mapObjects.add( bot );
-  lastPathBot = bot;
-  lastMovable = bot;
 }
 
 void addPathBotWayPoint( double x, double y ){
@@ -787,6 +898,15 @@ void setup(){
     //INSERT vvvv
 
     // LEVEL 1
+    
+    //Test door and switch.
+    //make the switch and then the door.  The order connects them.
+    addSwitch( 36, 440 );
+    addDoor( 497, 484, 592, 484, 10 );
+    addSwitch(36,440);
+    addDoor( 927,555,1002,555,10 );
+    addDoor( 927,572,1002,572,10 );
+    addDoor( 927,590,1002,590,10 );
 
     // Walls around border
     aw(0,0,0,1000,1);

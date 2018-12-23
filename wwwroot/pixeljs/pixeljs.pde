@@ -222,6 +222,8 @@ class Wall extends Line implements EditableThing{
         super( a,b );
         this.weight = weight;
     }
+    
+    void bEditEvent(){}
 
     void draw(){
         if( levelEditMode && selectedThing == this ){
@@ -235,11 +237,13 @@ class Wall extends Line implements EditableThing{
               a = a.plus(moveAmount);;
             }else if( pmouse.distanceTo( b ) < weight*.6 ){
               b = b.plus(moveAmount);
+              bEditEvent();
             }else{
               Loc bestHit = this.closestLocTo( pmouse );
               if( bestHit.distanceTo( pmouse ) < weight*.6 ){
                 a = a.plus(moveAmount);
                 b = b.plus(moveAmount);
+                bEditEvent();
               }
             }
           }
@@ -298,6 +302,10 @@ class Door extends Wall{
       }
     }
     super.draw();
+  }
+  
+  void bEditEvent(){
+    startingB = b.copy();
   }
  
   void reset(){

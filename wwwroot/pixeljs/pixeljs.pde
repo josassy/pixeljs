@@ -903,7 +903,7 @@ void setup(){
     //make the switch and then the door.  The order connects them.
     addSwitch( 36, 440 );
     addDoor( 497, 484, 592, 484, 10 );
-    addSwitch(36,440);
+    addSwitch( 31, 662 );
     addDoor( 927,555,1002,555,10 );
     addDoor( 927,572,1002,572,10 );
     addDoor( 927,590,1002,590,10 );
